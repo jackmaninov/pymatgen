@@ -260,8 +260,201 @@ class Struct(MSONable):
 
     return natoms
 
+class Kpoints_supported_modes(Enum):
+    Automatic = 0
+    Gamma = 1
+    Monkhorst = 2
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def from_string(s):
+        c = s.lower()[0]
+        for m in Kpoints_supported_modes:
+            if m.name.lower()[0] == c:
+                return m
+        raise ValueError("Can't interprete Kpoint mode %s" % s)
+
 class Kpoints(MSONable):
     """
     case.klist reader/writer
     """
+
+    def __init__(self, comment="Default gamma", num_kpts=0,
+                 style=supported_modes.Gamma,
+                 kpts=((1, 1, 1),), kpts_shift=(0, 0, 0),
+                 kpts_weights=None, coord_type=None, labels=None,
+                 tet_number=0, tet_weight=0, tet_connctions=None):
+        """
+        WIEN2k Kpoint class constructor.
+
+        Args:
+            comment (str): String comment for Kpoints
+            num_kpts: number of k-points to automatically generate. If
+                set to zero, explicit cell divisions necessary.
+            style: Modes of generating k-points. Use one of the
+                Kpoints.supported_modes enum types.
+            kpts (2D array): 2D array of kpoints.
+            kpts_shift (3x1 aray): Shift for Kpoints.
+            coord_type: in line-mode, this variable specifies whether the
+                kpoints were given in Cartesian or Reciprocal coordinates.
+            labels: In line-mode, this should provide a list of labels for¬
+                each kpt. It is optional in explicit kpoint mode as comments for¬
+                k-points.¬
+            tet_number: For explicit kpoints, specifies the number of¬
+                tetrahedrons for the tetrahedron method.¬
+            tet_weight: For explicit kpoints, specifies the weight for each¬
+                tetrahedron for the tetrahedron method.¬
+            tet_connections: For explicit kpoints, specifies the connections¬
+                of the tetrahedrons for the tetrahedron method.¬
+                format is a list of tuples, [ (sym_weight, [tet_vertices]),¬
+                ...]¬
+        The default behavior of the construtor is for a Gamma centered,
+        1x1x1 k-point grid with no shift.
+        """
+
+        self.comment = comment
+        self.num_kpts = num_kpts
+        self.kpts = kpts
+        self.style = style
+        self.coord_type = coord_type
+        self.kpts_weights = kpts_weights
+        self.kpts_shift = kpts_shift
+        self.labels = labels
+        self.tet_number = tet_number
+        self.tet_weight = tet_weight
+
+    @property
+    def style(self):
+        return self._style
+
+    @style.setter
+    def style(self, style):
+        if isinstance(style, six.string_types):
+            style = Kpoints.supported_modes.from_string(style)
+
+        if style in (Kpoints.supported_modes.Automatic,
+                     Kpoints.supported_modes.Gamma,
+                     Kpoints.supported_modes.Monkhorst) and len(self.kpts) > 1:
+            raise ValueError("For fully automatic or automatic gamma or monk "
+                             "kpoints, only a single line for the number of "
+                             "divisions is allowed.")
+
+        self._style = style
+
+    @staticmethod
+    def automatic(subdivisions):
+        """
+        Convenient static constructor for a fully automatic Kpoint grid, with
+        gamma centered Monkhorst-Pack grids and the number of subdivisions
+        along each reciprocal lattice vector determined by the default WIEN2k
+        kgen behaviour.
+
+        Args:
+            subdivisions: Parameter determining number of subdivisions along
+                each reciprocal lattice vector.
+
+        Returns:
+            Kpoints object
+        """
+        return Kpoints("Fully automatic kpoint scheme", 0,
+                       style=Kpoints.supported_modes.Automatic,
+                       kpts=[[subdivisions]])
+
+    @staticmethod
+    def monkhorst_automatic(kpts=(2, 2, 2), shift=(0, 0, 0)):
+        """
+        Convenient static constructor for an automatic Monkhorst pack Kpoint
+        grid.
+
+        Args:
+            kpts: Subdivisions N_1, N_2 and N_3 along reciprocal lattice
+                vectors. Defaults to (2,2,2)
+            shift: Shift to be applied to the kpoints. Defaults to (0,0,0).
+
+        Returns:
+            Kpoints object
+        """
+        return Kpoints("Automatic kpoint scheme", 0,
+                       Kpoints.supported_modes.Monkhorst, kpts=[kpts],
+                       kpts_shift=shift)
+
+    @staticmethod
+    def automatic_density(structure, kppa, force_gamma=False):
+        """
+        Returns an automatic Kpoint object based on a structure and a kpoint
+        density. Uses Gamma centered meshes for hexagonal cells and
+        Monkhorst-Pack grids otherwise.
+
+        Algorithm:
+            Uses a simple approach scaling the number of divisions along each
+            reciprocal lattice vector proportional to its length.
+
+        Args:
+            structure (Structure): Input structure
+            kppa (int): Grid density
+            force_gamma (bool): Force a gamma centered mesh (default is to
+                use gamma only for hexagonal cells or odd meshes)
+
+        Returns:
+            Kpoints
+        """
+        comment = "pymatgen 4.7.6+ generated KPOINTS with grid density = " + \
+            "%.0f / atom" % kppa
+        if math.fabs((math.floor(kppa ** (1 / 3) + 0.5)) ** 3 - kppa) < 1:
+            kppa += kppa * 0.01
+        latt = structure.lattice
+        lengths = latt.abc
+        ngrid = kppa / structure.num_sites
+        mult = (ngrid * lengths[0] * lengths[1] * lengths[2]) ** (1 / 3)
+
+        num_div = [int(math.floor(max(mult / l, 1))) for l in lengths]
+
+        is_hexagonal = latt.is_hexagonal()
+
+        has_odd = any([i % 2 == 1 for i in num_div])
+        if has_odd or is_hexagonal or force_gamma:
+            style = Kpoints.supported_modes.Gamma
+        else:
+            style = Kpoints.supported_modes.Monkhorst
+
+        return Kpoints(comment, 0, style, [num_div], [0, 0, 0])
+
+    @staticmethod
+    def automatic_density_by_vol(structure, kppvol, force_gamma=False):
+        """
+        Returns an automatic Kpoint object based on a structure and a kpoint
+        density per inverse Angstrom of reciprocal cell.
+
+        Algorithm:
+            Same as automatic_density()
+
+        Args:
+            structure (Structure): Input structure
+            kppvol (int): Grid density per Angstrom^(-3) of reciprocal cell
+            force_gamma (bool): Force a gamma centered mesh
+
+        Returns:
+            Kpoints
+        """
+        vol = structure.lattice.reciprocal_lattice.volume
+        kppa = kppvol * vol * structure.num_sites
+        return Kpoints.automatic_density(structure, kppa,
+                                         force_gamma=force_gamma)
+
+    @staticmethod
+    def from_file(filename):
+        """
+        Reads a Kpoints object from a KPOINTS file.
+
+        Args:
+            filename (str): filename to read from.
+
+        Returns:
+            Kpoints object
+        """
+        with zopen(filename, "rt") as f:
+            return Kpoints.from_string(f.read())
+
 
