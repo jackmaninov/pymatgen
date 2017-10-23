@@ -55,8 +55,8 @@ class Site(MSONable):
 
     """
 
-    def __init__(self, sitenum, coords, multi, isplit, NPT=781, R0, RMT, Z):
-        if structure.is_ordered:
+    # def __init__(self, sitenum, coords, multi, isplit, NPT=781, R0, RMT, Z):
+        # if structure.is_ordered:
 
 
 
@@ -65,7 +65,7 @@ class Struct(MSONable):
     case.struct reader/writer
     """
 
-    def __init__ (self, structure, comment=None, relativistic=True):
+    def __init__(self, structure, comment=None, relativistic=True):
         if structure.is_ordered:
             site_properties = {}
             self.comment = structure.formula if comment is None else comment
@@ -125,9 +125,9 @@ class Struct(MSONable):
         comment = lines[0].rstrip()
 
         # line 2:
-        reader2=ff.FortranRecordReader('(A4,23X,I3)')
+        reader2 = ff.FortranRecordReader('(A4,23X,I3)')
         try:
-            structtype=LATTYPE.get(reader2.read(lines[1])[0].rstrip())
+            structtype = LATTYPE.get(reader2.read(lines[1])[0].rstrip())
         except IndexError:
             raise ValueError("Unknown lattice type")
         try:
@@ -136,14 +136,14 @@ class Struct(MSONable):
             raise ValueError("Unknown NAT")
 
         #line 3:
-        reader3=ff.FortranRecordReader('(13X,A4)')
+        reader3 = ff.FortranRecordReader('(13X,A4)')
         try:
             relativistic = RELA.get(reader3.read(lines[2])[0])
-        except
+        except:
             raise ValueError("Unclear relativistic mode in STRUCT")
 
         #line 4:
-        reader4=ff.FortranRecordReader('(6F10.6)')
+        reader4 = ff.FortranRecordReader('(6F10.6)')
         try:
             [a, b, c, alpha, beta, gamma] = reader4.read(lines[3])
             assert (a is not None or b is not None or c is not None), 'Missing unit cell parameter'
@@ -256,9 +256,8 @@ class Struct(MSONable):
             symops.append(symop)
             symopindex = reader15(lines[currentline])
             currentline += 1
-            assert (symopindex = i+1,'Misordered symmetry operations'
+            # assert (symopindex = i+1,'Misordered symmetry operations'
 
-    return natoms
 
 class Kpoints_supported_modes(Enum):
     Automatic = 0
@@ -363,6 +362,43 @@ class Kpoints(MSONable):
                        kpts=[[subdivisions]])
 
     @staticmethod
+    def gamma_automatic(kpts=(1, 1, 1), shift=(0, 0, 0)):
+        """
+        Convenient static constructor for an automatic Gamma centered Kpoint
+        grid.
+
+        Args:
+            kpts: Subdivisions N_1, N_2 and N_3 along reciprocal lattice
+                vectors. Defaults to (1,1,1)
+            shift: Shift to be applied to the kpoints. Defaults to (0,0,0).
+
+        Returns:
+            Kpoints object
+        """
+        return Kpoints("Automatic kpoint scheme", 0,
+                       Kpoints.supported_modes.Gamma, kpts=[kpts],
+                       kpts_shift=shift)
+
+    @staticmethod
+    def monkhorst_automatic(kpts=(2, 2, 2), shift=(0, 0, 0)):
+        """
+        Convenient static constructor for an automatic Monkhorst pack Kpoint
+        grid.
+
+        Args:
+            kpts: Subdivisions N_1, N_2 and N_3 along reciprocal lattice
+                vectors. Defaults to (2,2,2)
+            shift: Shift to be applied to the kpoints. Defaults to (0,0,0).
+
+        Returns:
+            Kpoints object
+        """
+        return Kpoints("Automatic kpoint scheme", 0,
+                       Kpoints.supported_modes.Monkhorst, kpts=[kpts],
+                       kpts_shift=shift)
+
+
+    @staticmethod
     def monkhorst_automatic(kpts=(2, 2, 2), shift=(0, 0, 0)):
         """
         Convenient static constructor for an automatic Monkhorst pack Kpoint
@@ -457,4 +493,44 @@ class Kpoints(MSONable):
         with zopen(filename, "rt") as f:
             return Kpoints.from_string(f.read())
 
+    @staticmethod
+    def from_string(string):
+        """
+        Reads a Kpoints object from a case.klist string.
+
+        Args:
+            string (str): case.klist string.
+
+        Returns:
+            Kpoints object
+        """
+
+        reader=ff.FortranRecordReader('(I10,4I10,f5.1)')
+        reader1=ff.FortranRecordReader('(I10,4I10,3f5.1,2x,i8,\' k, div: (\',3i3,\')\')')
+        kpts = []
+        kpts_weights = []
+
+
+        lines = [line.strip() for line in string.splitlines()]
+
+        for line_number, line in enumerate(lines):
+            if line == "END": break
+            if line_number == 1:
+                try:
+                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV, junk1, junk2, num_kpts0, n_divx, n_divy, ndivz ] = reader1.read (line)
+                    if KX == KY == KZ == 0: style = Kpoints.supported_modes.Gamma
+                except:
+                    raise ValueError('Error reading first k-point', line)
+            else:
+                try:
+                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV] = reader.read (line)
+                except:
+                    raise ValueError('Error reading k-point:', line)
+
+            kpts.append([float(KX/IDIV), float(KY/IDIV), float(KZ/IDIV)])
+            kpts_weights.append(float(K_WEIGHT))
+
+
+        return Kpoints.gamma_automatic(kpts) if style == Kpoints.supported_modes.Gamma \
+            else Kpoints.monkhorst_automatic(kpts)
 
