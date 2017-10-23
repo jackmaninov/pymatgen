@@ -38,7 +38,7 @@ from monty.json import MSONable
 
 """
 Classes for reading/manipulating/writing WIEN2k input files. Initial focus is
-on case.struct, case.inc, case.inm, case.inso, case.int, case.inorb
+on case.struct, case.inc, case.inm, case.inso, case.int, case.inorb, case.klist
 """
 
 __author__ = "Eamon McDermott"
