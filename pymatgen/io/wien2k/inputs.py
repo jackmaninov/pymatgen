@@ -41,11 +41,7 @@ Classes for reading/manipulating/writing WIEN2k input files. Initial focus is
 on case.struct, case.inc, case.inm, case.inso, case.int, case.inorb, case.klist
 """
 
-__author__ = "Eamon McDermott"
-__version__ = "0.1"
-__email__ = "eamon.mcdermott@cea.fr"
-__status__ = "Development"
-__date__ = "Oct 19, 2017"
+
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +240,7 @@ class Struct(MSONable):
                 print(atomindex, x, y, z, ROTLOC)
 
         nsym = reader11.read(lines[currentline])
-        currenline += 1
+        currentline += 1
 
         symops=[]
 
@@ -256,7 +252,7 @@ class Struct(MSONable):
             symops.append(symop)
             symopindex = reader15(lines[currentline])
             currentline += 1
-            # assert (symopindex = i+1,'Misordered symmetry operations'
+            # assert symopindex = i+1,'Misordered symmetry operations'
 
 
 class Kpoints_supported_modes(Enum):
@@ -279,6 +275,7 @@ class Kpoints(MSONable):
     """
     case.klist reader/writer
     """
+    supported_modes = Kpoints_supported_modes
 
     def __init__(self, comment="Default gamma", num_kpts=0,
                  style=supported_modes.Gamma,
