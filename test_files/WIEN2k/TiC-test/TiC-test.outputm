@@ -1,0 +1,47 @@
+ JATOM =            1   J =            1
+  ESX  =  -7.1324903209E+02 OCC =   2.0000000000E+00  2.0000000000E+00
+   ESUM,EKIN =   -767.587208527000       0.000000000000000E+000
+ JATOM =            1   J =            2
+  ESX  =  -7.6622010034E+01 OCC =   2.0000000000E+00  2.0000000000E+00
+   ESUM,EKIN =   -1480.83624061300       0.000000000000000E+000
+ JATOM =            1   J =            3
+  ESX  =  -6.3559772930E+01 OCC =   2.0000000000E+00  2.0000000000E+00
+   ESUM,EKIN =   -1557.45825064700       0.000000000000000E+000
+ JATOM =            1   J =            4
+  ESX  =  -1.2542309021E+02 OCC =   4.0000000000E+00  4.0000000000E+00
+   ESUM,EKIN =   -1621.01802357700       0.000000000000000E+000
+ JATOM =            2   J =            1
+  ESX  =  -3.7510106758E+01 OCC =   2.0000000000E+00  2.0000000000E+00
+   ESUM,EKIN =   -1746.44111378500       0.000000000000000E+000
+   ESUM =   -1783.95122054300     
+ 13. ITERATION
+
+
+       DENSITY AT NUCLEUS
+        JATOM        VALENCE       SEMI-CORE          CORE           TOTAL
+:RTO001:   1       97.663889        0.000000     8473.979589     8571.643477
+:RTO002:   2        4.969068        0.000000      123.796013      128.765081
+ Allocating CLM-arrays            3  MB
+ Allocating nwav-arrays           0  MB
+ Allocating cfft-array            0  MB
+:NTO   : INTERSTITIAL CHARGE =     2.431678
+
+:NEC01: NUCLEAR AND ELECTRONIC CHARGE     28.00000    27.99999
+:OTO   : INTERSTITIAL CHARGE =     2.432117
+
+:NEC02: NUCLEAR AND ELECTRONIC CHARGE     28.00000    28.00000
+ 
+ Allocating PS:            0  MB
+ Allocating SB:            0  MB
+:MIX  :   PRATT  REGULARIZATION: 1.00E-04  GREED: 0.1500
+:CTO   : INTERSTITIAL CHARGE =     2.432053
+
+:NEC03: NUCLEAR AND ELECTRONIC CHARGE     28.00000    28.00000
+
+:ENE  : *WARNING** TOTAL ENERGY IN Ry =        -1783.95122054
+
+  
+Time all        CPU  1.000E-02   Wall  2.959E-01 Threading  0.03 Nett 100.0 %
+Time to setup   CPU  1.000E-02   Wall  1.647E-01 Threading  0.06 Nett  55.6 %
+Time for MSEC   CPU  0.000E+00   Wall  1.111E-01 Threading  0.00 Nett  37.6 %
+Time for output CPU  0.000E+00   Wall  2.012E-02 Threading  0.00 Nett   6.8 %

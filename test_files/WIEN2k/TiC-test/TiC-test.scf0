@@ -1,0 +1,34 @@
+ Flat Integration
+ New Mode for Coulomb Integral
+ Consistent 3/8+Simpson combinations
+ Extension of core to zero
+ LDM version in phi
+ Fifth-order quadrature in outwin
+
+
+            ---------
+:ITE013: 13. ITERATION
+            ---------
+
+:NATO :    2 INDEPENDENT AND    2 TOTAL ATOMS IN UNITCELL
+       SUBSTANCE: TiC                                                         
+
+       LATTICE                      = F   
+:POT  : POTENTIAL OPTION EX_PBE EC_PBE VX_PBE VC_PBE
+:LAT  : LATTICE CONSTANTS=  8.17874  8.17874  8.17874    1.571    1.571    1.571
+:VOL  : UNIT CELL VOLUME =     136.77254
+       MODE OF CALCULATION IS       = RELA
+       NON-SPINPOLARIZED CALCULATION
+:IFFT  : FFT-parameters:   64   64   64 Factor: 2.00
+       ATOMNUMBER=  1 Ti         VCOUL-ZERO =  0.49075E+00
+       ATOMNUMBER=  2 C          VCOUL-ZERO =  0.58597E+00
+:FIT001: LUSE= 13 SIGMA OF V-XC FIT FOR ATOM  1  0.1471678E-01
+:FIT001: LUSE= 13 SIGMA OF V-XC FIT FOR ATOM  1  0.1471678E-01
+:FIT002: LUSE= 13 SIGMA OF V-XC FIT FOR ATOM  2  0.6703025E-03
+:FIT002: LUSE= 13 SIGMA OF V-XC FIT FOR ATOM  2  0.6703025E-03
+:DEN  : DENSITY INTEGRAL  =          -753.49540181   (Ry)
+       ELS_POTENTIAL_AT Z=0 and Z=0.5:  -2.84753  -2.84753
+       ELS_POTENTIAL_AT Y=0 and Y=0.5:   0.00000   0.00000
+:VZERO:v0,v0c,v0x  -4.09937  -2.84753  -1.25184 v5,v5c,v5x  -4.09937  -2.84753  -1.25184
+:VZERY:v0,v0c,v0x  -0.87074   0.00000  -0.87074 v5,v5c,v5x  -0.87074   0.00000  -0.87074
+:VZERX:v0,v0c,v0x  -0.87074   0.00000  -0.87074 v5,v5c,v5x  -0.87074   0.00000  -0.87074

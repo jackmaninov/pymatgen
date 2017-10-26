@@ -1,0 +1,35 @@
+:LMAX-WF:   10   Non-Spherical LMAX:   4
+
+          ATOMIC SPHERE DEPENDENT PARAMETERS FOR ATOM  Ti        
+:e__0001: OVERALL ENERGY PARAMETER IS    0.5089
+          OVERALL BASIS SET ON ATOM IS LAPW
+:E0_0001: E( 0)=    0.5089
+             APW+lo
+:E0_0001: E( 0)=   -3.4657   E(BOTTOM)=   -3.595   E(TOP)=   -3.337  2  3   187
+             LOCAL ORBITAL
+:E1_0001: E( 1)=    0.5089
+             APW+lo
+:E1_0001: E( 1)=   -1.7378   E(BOTTOM)=   -1.971   E(TOP)=   -1.505  1  2   183
+             LOCAL ORBITAL
+:E2_0001: E( 2)=    0.5089   E(BOTTOM)=    0.368   E(TOP)= -200.000  0 -1    83
+             APW+lo
+
+          ATOMIC SPHERE DEPENDENT PARAMETERS FOR ATOM  C         
+:e__0002: OVERALL ENERGY PARAMETER IS    0.5089
+          OVERALL BASIS SET ON ATOM IS LAPW
+:E0_0002: E( 0)=    0.9089
+             APW+lo
+:E0_0002: E( 0)=   -0.7800   E(BOTTOM)=   -1.009   E(TOP)= -200.000  1 -1   150
+             LOCAL ORBITAL
+:E1_0002: E( 1)=    0.5089
+             APW+lo
+
+       K=   0.00000   0.00000   0.00000            1
+:RKM  : MATRIX SIZE   155LOs:  18  RKM= 6.89  WEIGHT= 1.00  PGR:    
+       EIGENVALUES ARE:
+:EIG00001:      -3.4448641   -1.6834719   -1.6834719   -1.6834719   -0.2081752
+:EIG00006:       0.7609261    0.7609261    0.7609261    0.8259431    0.8259431
+:EIG00011:       0.8259431    0.8374323    0.8374323    1.4779636    1.7409163
+       ********************************************************
+
+:KPT   :      NUMBER OF K-POINTS:     8

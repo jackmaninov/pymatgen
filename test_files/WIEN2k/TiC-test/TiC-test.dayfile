@@ -1,0 +1,19 @@
+
+Calculating TiC-test in /W/em250772/TiC-test
+on summer with PID 224780
+using WIEN2k_17.1 (Release 30/6/2017) in /home/em250772/WIEN2k_17
+
+
+    start 	(Thu Oct 26 14:03:58 CEST 2017) with lapw0 (2/99 to go)
+
+    cycle 1 	(Thu Oct 26 14:03:58 CEST 2017) 	(2/99 to go)
+
+>   lapw0  	(14:03:58) 1.053u 0.957s 0:03.27 61.1%	0+0k 2168+504io 8pf+0w
+>   lapw1      	(14:04:03) 0.129u 0.264s 0:01.37 27.7%	0+0k 8+648io 0pf+0w
+>   lapw2      	(14:04:05) 0.070u 0.013s 0:01.15 6.9%	0+0k 0+416io 0pf+0w
+>   lcore	(14:04:07) 0.010u 0.000s 0:02.05 0.4%	0+0k 0+240io 0pf+0w
+>   mixer	(14:04:11) 0.017u 0.004s 0:00.32 3.1%	0+0k 0+624io 0pf+0w
+:ENERGY convergence:  0 0.00001 .0000191600000000
+:CHARGE convergence:  0 0.0000 .011640
+
+>   stop due to .stop file
