@@ -61,28 +61,77 @@ def _wien2krun_float(f):
             return np.nan
         raise e
 
-class dayfile(MSONable)
+def keep_last(seq):
+
+    seen = {}
+    result = []
+    for item in seq:
+        if item in seen: continue
+        seen[marker] = 1
+        result.append(item)
+    return result
+
+
+class dayfile(MSONable):
     """
-    Parse the WIEN2k case.dayfile for important SCF results
+    Parse the WIEN2k case.dayfile for important SCF results (convergence, early termination, etc)
     """
 
     def __init__(self,filename):
         self.filename = filename
         self.is_stopped = False
 
-        run_stats = {}
+        run_stats = []
+        energy_convergence = []
+        charge_convergence = []
         header = []
+        cycle_start = []
+        running_prog = None
+        current_cycle = None
+        last_time = None
 
-    time_patt = re.compile(r"\(()")
 
-    all_lines = []
-    for line in reverse_readfile(self.filename):
-        clean = line.strip()
-        all_lines.append(clean)
-        if clean.find("stop due to .stop file") != -1:
-            self.is_stopped = True
-        else:
+        prog_patt = re.compile(r"^\>")
+        stop_patt = re.compile(r"crashed|\.stop|stop error")
+        time_patt = re.compile(r"(^|\W)([0-9]*\.[0-9]{3})u")
 
+        all_lines = []
+        for line in zopen(self.filename):
+            clean = line.strip()
+            all_lines.append(clean)
+
+            if stop_patt.search(clean):
+                self.is_stopped = True
+            else:
+                if clean.find("cycle") != -1:
+                    tok = clean.split()
+                    current_cycle = tok[1]
+                    cycle_start.append([current_cycle, ' '.join(tok[2:8])])
+                    continue
+                if current_cycle is None:
+                    header.append(clean)
+                if prog_patt.search(clean):
+                    tok = clean.split()
+                    if running_prog is not None:
+                        run_stats.append([current_cycle, running_prog, last_time])
+                    running_prog = tok[1]
+                if time_patt.search(clean):
+                    # only keep the last (summary) time for parallel programs
+                    last_time = time_patt.search(clean).group(2)
+                if clean.find(":ENERGY") != -1:
+                    energy_convergence.append([current_cycle, clean.split()[-1]])
+                if clean.find(":CHARGE") != -1:
+                    charge_convergence.append([current_cycle, clean.split()[-1]])
+
+        if running_prog is not None and last_time is not None:
+            run_stats.append([current_cycle, running_prog, last_time])
+
+        self.run_stats = run_stats
+        self.CPU_time = round(sum([float(prog[-1]) for prog in run_stats]),3)   # approximate
+        self.energy_convergence = energy_convergence
+        self.charge_convergence = charge_convergence
+        self.all_lines = all_lines
+        self.header = header
 
 class Scffile(MSONable):
     """
@@ -106,4 +155,4 @@ class Scffile(MSONable):
         for line in reverse_readfile(self.filename):
             clean = line.strip()
             all_lines.append(clean)
-            if clean.find
+            #if clean.find
