@@ -43,7 +43,6 @@ from pymatgen.util.io_utils import clean_lines, micro_pyawk
 Classes for reading/manipulating/writing WIEN2k ouput files.
 """
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -61,39 +60,42 @@ def _wien2krun_float(f):
             return np.nan
         raise e
 
-def keep_last(seq):
 
-    seen = {}
-    result = []
-    for item in seq:
-        if item in seen: continue
-        seen[marker] = 1
-        result.append(item)
-    return result
+# def keep_last(seq):
+#     seen = {}
+#     result = []
+#     for item in seq:
+#         if item in seen: continue
+#         seen[marker] = 1
+#         result.append(item)
+#     return result
 
 
-class dayfile(MSONable):
+class Dayfile(MSONable):
     """
     Parse the WIEN2k case.dayfile for important SCF results (convergence, early termination, etc)
     """
 
-    def __init__(self,filename):
+    def __init__(self, filename):
         self.filename = filename
         self.is_stopped = False
 
-        run_stats = []
+        ext_run_stats = []
+        run_stats = {}
         energy_convergence = []
         charge_convergence = []
         header = []
         cycle_start = []
         running_prog = None
         current_cycle = None
-        last_time = None
-
+        last_utime = None
+        last_stime = None
+        processors = 1
 
         prog_patt = re.compile(r"^\>")
         stop_patt = re.compile(r"crashed|\.stop|stop error")
-        time_patt = re.compile(r"(^|\W)([0-9]*\.[0-9]{3})u")
+        utime_patt = re.compile(r"(^|\W)([0-9]*\.[0-9]{3})u")
+        stime_patt = re.compile(r"(^|\W)([0-9]*\.[0-9]{3})s")
 
         all_lines = []
         for line in zopen(self.filename):
@@ -104,34 +106,47 @@ class dayfile(MSONable):
                 self.is_stopped = True
             else:
                 if clean.find("cycle") != -1:
-                    tok = clean.split()
+                    tok = clean.strip().split()
                     current_cycle = tok[1]
                     cycle_start.append([current_cycle, ' '.join(tok[2:8])])
                     continue
                 if current_cycle is None:
                     header.append(clean)
                 if prog_patt.search(clean):
-                    tok = clean.split()
+                    tok = clean.strip().split()
                     if running_prog is not None:
-                        run_stats.append([current_cycle, running_prog, last_time])
+                        ext_run_stats.append([current_cycle, running_prog, last_utime, last_stime])
                     running_prog = tok[1]
-                if time_patt.search(clean):
+                if utime_patt.search(clean):
                     # only keep the last (summary) time for parallel programs
-                    last_time = time_patt.search(clean).group(2)
+                    last_utime = utime_patt.search(clean).group(2)
+                    last_stime = stime_patt.search(clean).group(2)
                 if clean.find(":ENERGY") != -1:
-                    energy_convergence.append([current_cycle, clean.split()[-1]])
+                    energy_convergence.append([current_cycle, clean.strip().split()[-1]])
                 if clean.find(":CHARGE") != -1:
-                    charge_convergence.append([current_cycle, clean.split()[-1]])
+                    charge_convergence.append([current_cycle, clean.strip().split()[-1]])
+                if clean.find("processors") != -1:
+                    tok = clean.strip().split()
+                    processors = tok[-2]
 
-        if running_prog is not None and last_time is not None:
-            run_stats.append([current_cycle, running_prog, last_time])
+        if running_prog is not None and last_utime is not None:
+            ext_run_stats.append([current_cycle, running_prog, last_utime, last_stime])
+
+        self.ext_run_stats = ext_run_stats
+        self.user_time = round(sum([float(prog[2]) for prog in ext_run_stats]), 3)  # approximate
+        self.sys_time = round(sum([float(prog[3]) for prog in ext_run_stats]), 3)
+
+        run_stats['User time (sec)'] = self.user_time
+        run_stats['System time (sec)'] = self.sys_time
+        run_stats['cores'] = processors
 
         self.run_stats = run_stats
-        self.CPU_time = round(sum([float(prog[-1]) for prog in run_stats]),3)   # approximate
         self.energy_convergence = energy_convergence
         self.charge_convergence = charge_convergence
         self.all_lines = all_lines
         self.header = header
+
+
 
 class Scffile(MSONable):
     """
@@ -140,19 +155,54 @@ class Scffile(MSONable):
 
     def __init__(self, filename):
         self.filename = filename
-        self.is_stopped = False
 
         header = []
-        iteration = None
+        last_iteration = None
         spinpolarized = None
         potentials = []
         ifft = []
         ifft_enhancement = None
         density = None
-        lattice_c
+        lattice_constant = None
+        total_energy = None
+        total_energy_warning = None
+        efermi = None
+        nelect = None
+        total_mag = None
+        mag_x = []
+        mag_y = []
+        mag_z = []
+        charge = []
 
         all_lines = []
         for line in reverse_readfile(self.filename):
             clean = line.strip()
             all_lines.append(clean)
-            #if clean.find
+            if clean.find(":ENE") != -1:
+                tok = line.strip().split('=')
+                total_energy = float(tok[-1])
+                total_energy_warning = (clean.find("WARNING") != -1)
+            if clean.find(":FER") != -1:
+                tok = line.strip().split('=')
+                efermi = float(tok[-1])
+            if clean.find(":NOE") != -1:
+                tok = line.strip().split('=')
+                nelect = float(tok[-1])
+            if clean.find("SPINPOLARIZED") != -1:
+                spinpolarized = (clean.find("NON-SPINPOLARIZED") == -1)
+            if clean.find(":MMTOT") != -1:
+                tok = line.strip().split('=')
+                total_mag = float(tok[-1])
+
+
+            if all([nelect is not None, efermi is not None,
+                    spinpolarized is not None, spinpolarized and total_mag is not None]):
+                break
+
+        self.spinpolarized = spinpolarized
+        self.total_energy = total_energy
+        self.total_energy_warning = total_energy_warning
+        self.efermi = efermi
+        self.nelect = nelect
+        self.total_mag = total_mag
+
