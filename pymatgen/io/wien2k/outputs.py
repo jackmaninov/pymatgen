@@ -169,40 +169,62 @@ class Scffile(MSONable):
         efermi = None
         nelect = None
         total_mag = None
-        mag_x = []
-        mag_y = []
-        mag_z = []
+        magnetization = []
         charge = []
+        chargeline = {}
 
         all_lines = []
         for line in reverse_readfile(self.filename):
             clean = line.strip()
             all_lines.append(clean)
+            if clean.find(":ITE") != -1:
+                tok = re.split('[.:]', clean)
+                last_iteration = int(tok[2])
+                print(tok)
             if clean.find(":ENE") != -1:
-                tok = line.strip().split('=')
+                tok = clean.split('=')
                 total_energy = float(tok[-1])
                 total_energy_warning = (clean.find("WARNING") != -1)
             if clean.find(":FER") != -1:
-                tok = line.strip().split('=')
+                tok = clean.split('=')
                 efermi = float(tok[-1])
             if clean.find(":NOE") != -1:
-                tok = line.strip().split('=')
+                tok = clean.split('=')
                 nelect = float(tok[-1])
             if clean.find("SPINPOLARIZED") != -1:
                 spinpolarized = (clean.find("NON-SPINPOLARIZED") == -1)
             if clean.find(":MMTOT") != -1:
-                tok = line.strip().split('=')
+                spinpolarized = True
+                tok = clean.split('=')
                 total_mag = float(tok[-1])
+            if clean.find(":MMI") != -1:
+                tok = clean.split()
+                magnetization.append(float(tok[-1]))
+            if clean.find(":CTO") != -1:
+                tok = clean.split()
+                print (tok)
+                if spinpolarized:
+                    chargeline{'up'}, chargeline{'dn'}, chargeline{tot}
+                    }
+                else
+                    chargeline = ['tot', tok[-1]]
+                if clean.find("INTERSTITIAL"):
+                    charge.insert(0, chargeline)  #put INTERSTITAL at the beginning so when we reverse it is at end
+                else
+                    charge.append(chargeline)
 
 
             if all([nelect is not None, efermi is not None,
-                    spinpolarized is not None, spinpolarized and total_mag is not None]):
+                    spinpolarized is not None, spinpolarized and total_mag is not None,
+                    last_iteration is not None]):
                 break
 
+        self.magnetization = magnetization[::-1]
         self.spinpolarized = spinpolarized
         self.total_energy = total_energy
         self.total_energy_warning = total_energy_warning
         self.efermi = efermi
         self.nelect = nelect
         self.total_mag = total_mag
+        self.last_iteration = last_iteration
 
