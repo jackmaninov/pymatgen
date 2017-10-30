@@ -146,12 +146,12 @@ class Dayfile(MSONable):
         self.all_lines = all_lines
         self.header = header
 
-
-
 class Scffile(MSONable):
     """
     Parser for a WIEN2k case.scf file, where most output is collected
     """
+
+    nsites = None
 
     def __init__(self, filename):
         self.filename = filename
@@ -173,13 +173,14 @@ class Scffile(MSONable):
         charge = []
         chargeline = {}
 
-        all_lines = []
         for line in reverse_readfile(self.filename):
             clean = line.strip()
-            all_lines.append(clean)
             if clean.find(":ITE") != -1:
                 tok = re.split('[.:]', clean)
                 last_iteration = int(tok[2])
+            if ":NATO" in clean:
+                tok = clean.split()
+                self.nsites, self.natoms = int(tok[2]), int(tok[5])
             if clean.find(":ENE") != -1:
                 tok = clean.split('=')
                 total_energy = float(tok[-1])
@@ -235,3 +236,49 @@ class Scffile(MSONable):
         with the main distribution.
         """
 
+    @staticmethod
+    def read_core_state_eigen(self, debugatom=99):
+        """
+        Read out the core states
+
+        :return:
+            A list of dict over the atoms [{"AO":[core state eig]}]
+            The core state eigenenergy list for each AO is over each SCF iteration
+        """
+
+        cl = [defaultdict(list) for i in range(self.nsites)]
+        with zopen(self.filename, "rt") as fscf:
+            line = fscf.readline()
+            while line != "":
+                line = fscf.readline()
+                if ":ITE" in line:
+                    tok = re.split('[.:]', line)
+                    current_iteration = int(tok[2])
+                if ":1S" in line:
+                    while (line != "\n" and line.find("Ry") != -1):
+                        tok = re.split('[ :]', line)
+                        if int(line[4:7]) == debugatom:
+                            print (line)
+                            print (line[4:7], line[9:12], float(tok[-2]))
+                        try:
+                            cl[int(line[4:7])-1][str.lower(line[9:12]).strip()].append(float(tok[-2]))
+                        except:
+                            print ("Append fails at ", int(line[4:7]), str.lower(line[9:12]))
+                        line = fscf.readline()
+
+        return cl
+
+class OutputNMR(MSONable):
+    """
+    TODO: Parse the NMR chemical shifts of an x_nmr_lapw run
+
+    :param self:
+    :return:
+    """
+
+    def __init__(self, filename):
+        """
+        Read and parse case.
+        :param filename: case.outputnmr to parse
+        """
+        warnings.warn('TODO: WIEN2k NMR parsing not implemented')
