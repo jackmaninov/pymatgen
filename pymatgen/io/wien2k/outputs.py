@@ -158,7 +158,7 @@ class Scffile(MSONable):
 
         header = []
         last_iteration = None
-        spinpolarized = None
+        spin = None
         potentials = []
         ifft = []
         ifft_enhancement = None
@@ -180,7 +180,6 @@ class Scffile(MSONable):
             if clean.find(":ITE") != -1:
                 tok = re.split('[.:]', clean)
                 last_iteration = int(tok[2])
-                print(tok)
             if clean.find(":ENE") != -1:
                 tok = clean.split('=')
                 total_energy = float(tok[-1])
@@ -192,9 +191,9 @@ class Scffile(MSONable):
                 tok = clean.split('=')
                 nelect = float(tok[-1])
             if clean.find("SPINPOLARIZED") != -1:
-                spinpolarized = (clean.find("NON-SPINPOLARIZED") == -1)
+                spin = (clean.find("NON-SPINPOLARIZED") == -1)
             if clean.find(":MMTOT") != -1:
-                spinpolarized = True
+                spin = True
                 tok = clean.split('=')
                 total_mag = float(tok[-1])
             if clean.find(":MMI") != -1:
@@ -202,29 +201,37 @@ class Scffile(MSONable):
                 magnetization.append(float(tok[-1]))
             if clean.find(":CTO") != -1:
                 tok = clean.split()
-                print (tok)
-                if spinpolarized:
-                    chargeline{'up'}, chargeline{'dn'}, chargeline{tot}
-                    }
-                else
-                    chargeline = ['tot', tok[-1]]
-                if clean.find("INTERSTITIAL"):
-                    charge.insert(0, chargeline)  #put INTERSTITAL at the beginning so when we reverse it is at end
-                else
-                    charge.append(chargeline)
-
+                if spin:
+                    chargeline['up'], chargeline['dn'], chargeline['tot'] = float(tok[-7]), \
+                        float(tok[-4]), float(tok[-1])
+                else:
+                    chargeline['tot'] = float(tok[-1])
+                if clean.find("INTERSTITIAL") != -1:
+                    charge.insert(0, dict(chargeline))  #put INTERSTITAL at the beginning so when we reverse it is at end
+                else:
+                    charge.append(dict(chargeline))
 
             if all([nelect is not None, efermi is not None,
-                    spinpolarized is not None, spinpolarized and total_mag is not None,
+                    spin is not None,
                     last_iteration is not None]):
                 break
 
-        self.magnetization = magnetization[::-1]
-        self.spinpolarized = spinpolarized
+        self.magnetization = tuple(magnetization[::-1])
+        self.charge = tuple(charge[::-1])
+        self.spin = spin
         self.total_energy = total_energy
         self.total_energy_warning = total_energy_warning
         self.efermi = efermi
         self.nelect = nelect
         self.total_mag = total_mag
         self.last_iteration = last_iteration
+        self.data = {}
+
+        """
+        TODO other items read in pymatgen.io.vasp.outputs.py.Outcar can be extracted
+        from BerryPI calculations (Piezoelectric epsilon, Born effective charge)
+        
+        WIENncm exists to deal with non-collinear spin structures, but is not included
+        with the main distribution.
+        """
 
