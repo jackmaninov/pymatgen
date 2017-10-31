@@ -236,11 +236,10 @@ class Scffile(MSONable):
         with the main distribution.
         """
 
-    @staticmethod
-    def read_core_state_eigen(self, debugatom=99):
+    def read_core_state_eigen(self):
         """
         Read out the core states
-
+        TODO: better error handling
         :return:
             A list of dict over the atoms [{"AO":[core state eig]}]
             The core state eigenenergy list for each AO is over each SCF iteration
@@ -257,16 +256,21 @@ class Scffile(MSONable):
                 if ":1S" in line:
                     while (line != "\n" and line.find("Ry") != -1):
                         tok = re.split('[ :]', line)
-                        if int(line[4:7]) == debugatom:
-                            print (line)
-                            print (line[4:7], line[9:12], float(tok[-2]))
                         try:
                             cl[int(line[4:7])-1][str.lower(line[9:12]).strip()].append(float(tok[-2]))
                         except:
-                            print ("Append fails at ", int(line[4:7]), str.lower(line[9:12]))
+                            continue
                         line = fscf.readline()
 
         return cl
+
+
+    @property
+    def is_spin(self):
+        """
+        :return: returns true if run is spin-polarized
+        """
+        return self.spin
 
 class OutputNMR(MSONable):
     """
