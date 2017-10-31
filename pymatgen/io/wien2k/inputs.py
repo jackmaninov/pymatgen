@@ -255,7 +255,7 @@ class Struct(MSONable):
             # assert symopindex = i+1,'Misordered symmetry operations'
 
 
-class Kpoints_supported_modes(Enum):
+class Klist_supported_modes(Enum):
     Automatic = 0
     Gamma = 1
     Monkhorst = 2
@@ -266,16 +266,16 @@ class Kpoints_supported_modes(Enum):
     @staticmethod
     def from_string(s):
         c = s.lower()[0]
-        for m in Kpoints_supported_modes:
+        for m in Klist_supported_modes:
             if m.name.lower()[0] == c:
                 return m
         raise ValueError("Can't interprete Kpoint mode %s" % s)
 
-class Kpoints(MSONable):
+class Klist(MSONable):
     """
     case.klist reader/writer
     """
-    supported_modes = Kpoints_supported_modes
+    supported_modes = Klist_supported_modes
 
     def __init__(self, comment="Default gamma", num_kpts=0,
                  style=supported_modes.Gamma,
@@ -328,11 +328,11 @@ class Kpoints(MSONable):
     @style.setter
     def style(self, style):
         if isinstance(style, six.string_types):
-            style = Kpoints.supported_modes.from_string(style)
+            style = Klist.supported_modes.from_string(style)
 
-        if style in (Kpoints.supported_modes.Automatic,
-                     Kpoints.supported_modes.Gamma,
-                     Kpoints.supported_modes.Monkhorst) and len(self.kpts) > 1:
+        if style in (Klist.supported_modes.Automatic,
+                     Klist.supported_modes.Gamma,
+                     Klist.supported_modes.Monkhorst) and len(self.kpts) > 1:
             raise ValueError("For fully automatic or automatic gamma or monk "
                              "kpoints, only a single line for the number of "
                              "divisions is allowed.")
@@ -354,9 +354,9 @@ class Kpoints(MSONable):
         Returns:
             Kpoints object
         """
-        return Kpoints("Fully automatic kpoint scheme", 0,
-                       style=Kpoints.supported_modes.Automatic,
-                       kpts=[[subdivisions]])
+        return Klist("Fully automatic kpoint scheme", 0,
+                     style=Klist.supported_modes.Automatic,
+                     kpts=[[subdivisions]])
 
     @staticmethod
     def gamma_automatic(kpts=(1, 1, 1), shift=(0, 0, 0)):
@@ -372,9 +372,9 @@ class Kpoints(MSONable):
         Returns:
             Kpoints object
         """
-        return Kpoints("Automatic kpoint scheme", 0,
-                       Kpoints.supported_modes.Gamma, kpts=[kpts],
-                       kpts_shift=shift)
+        return Klist("Automatic kpoint scheme", 0,
+                     Klist.supported_modes.Gamma, kpts=[kpts],
+                     kpts_shift=shift)
 
     @staticmethod
     def monkhorst_automatic(kpts=(2, 2, 2), shift=(0, 0, 0)):
@@ -390,9 +390,9 @@ class Kpoints(MSONable):
         Returns:
             Kpoints object
         """
-        return Kpoints("Automatic kpoint scheme", 0,
-                       Kpoints.supported_modes.Monkhorst, kpts=[kpts],
-                       kpts_shift=shift)
+        return Klist("Automatic kpoint scheme", 0,
+                     Klist.supported_modes.Monkhorst, kpts=[kpts],
+                     kpts_shift=shift)
 
 
     @staticmethod
@@ -409,9 +409,9 @@ class Kpoints(MSONable):
         Returns:
             Kpoints object
         """
-        return Kpoints("Automatic kpoint scheme", 0,
-                       Kpoints.supported_modes.Monkhorst, kpts=[kpts],
-                       kpts_shift=shift)
+        return Klist("Automatic kpoint scheme", 0,
+                     Klist.supported_modes.Monkhorst, kpts=[kpts],
+                     kpts_shift=shift)
 
     @staticmethod
     def automatic_density(structure, kppa, force_gamma=False):
@@ -431,7 +431,7 @@ class Kpoints(MSONable):
                 use gamma only for hexagonal cells or odd meshes)
 
         Returns:
-            Kpoints
+            Klist
         """
         comment = "pymatgen 4.7.6+ generated KPOINTS with grid density = " + \
             "%.0f / atom" % kppa
@@ -448,11 +448,11 @@ class Kpoints(MSONable):
 
         has_odd = any([i % 2 == 1 for i in num_div])
         if has_odd or is_hexagonal or force_gamma:
-            style = Kpoints.supported_modes.Gamma
+            style = Klist.supported_modes.Gamma
         else:
-            style = Kpoints.supported_modes.Monkhorst
+            style = Klist.supported_modes.Monkhorst
 
-        return Kpoints(comment, 0, style, [num_div], [0, 0, 0])
+        return Klist(comment, 0, style, [num_div], [0, 0, 0])
 
     @staticmethod
     def automatic_density_by_vol(structure, kppvol, force_gamma=False):
@@ -469,12 +469,12 @@ class Kpoints(MSONable):
             force_gamma (bool): Force a gamma centered mesh
 
         Returns:
-            Kpoints
+            Klist
         """
         vol = structure.lattice.reciprocal_lattice.volume
         kppa = kppvol * vol * structure.num_sites
-        return Kpoints.automatic_density(structure, kppa,
-                                         force_gamma=force_gamma)
+        return Klist.automatic_density(structure, kppa,
+                                       force_gamma=force_gamma)
 
     @staticmethod
     def from_file(filename):
@@ -488,7 +488,7 @@ class Kpoints(MSONable):
             Kpoints object
         """
         with zopen(filename, "rt") as f:
-            return Kpoints.from_string(f.read())
+            return Klist.from_string(f.read())
 
     @staticmethod
     def from_string(string):
@@ -515,7 +515,7 @@ class Kpoints(MSONable):
             if line_number == 1:
                 try:
                     [KPT, KX, KY, KZ, K_WEIGHT, IDIV, junk1, junk2, num_kpts0, n_divx, n_divy, ndivz ] = reader1.read (line)
-                    if KX == KY == KZ == 0: style = Kpoints.supported_modes.Gamma
+                    if KX == KY == KZ == 0: style = Klist.supported_modes.Gamma
                 except:
                     raise ValueError('Error reading first k-point', line)
             else:
@@ -528,6 +528,113 @@ class Kpoints(MSONable):
             kpts_weights.append(float(K_WEIGHT))
 
 
-        return Kpoints.gamma_automatic(kpts) if style == Kpoints.supported_modes.Gamma \
-            else Kpoints.monkhorst_automatic(kpts)
+        return Klist.gamma_automatic(kpts) if style == Klist.supported_modes.Gamma \
+            else Klist.monkhorst_automatic(kpts)
+
+class In0(MSONable):
+
+class In1(MSONable):
+
+class In2(MSONable):
+
+class Inc(MSONable):
+
+class Inm(MSONable):
+
+class Inso(MSONable):
+
+class Inst(MSONable):
+
+class Kgen(MSONable):
+
+
+class WIEN2kInput(dict, MSONable):
+    """
+    Class to contain a set of WIEN2k input objects, corresponding to a 'case'.
+    """
+
+
+    def __init__(self, struct, kpoints, optional_files=None,
+                 **kwargs):
+        super
+        self.update({'struct': struct,
+                    'kpoints': kpoints})
+        if optional_files is not None:
+            self.update(optional_files)
+
+    def __str__(self):
+            output = []
+            for k, v in self.items():
+                output.append(k)
+                output.append(str(v))
+                output.append("")
+            return "\n".join(output)
+
+    def as_dict(self):
+        d = {k: v.as_dict() for k, v in self.items()}
+        d["@module"] = self.__class__.__module__
+        d["@class"] = self.__class__.__name__
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        dec = MontyDecoder()
+        sub_d = {"optional_files": {}}
+        for k, v in d.items():
+            if k in ["struct", "kpoints"]:
+                sub_d[k.lower()] = dec.process_decoded(v)
+            elif k not in ["@module", "@class"]:
+                sub_d["optional_files"][k] = dec.process_decoded(v)
+        return cls(**sub_d)
+
+    def write_input(self, output_dir=".", make_dir_if_not_present=True):
+        """
+        Write a WIEN2k case
+
+        :param output_dir (str): Director to write to. Defaults to current
+            directory (".").
+        :param make_dir_if_not_present (bool): Creat the directory if not present.
+            Defaults to True.
+        :return: none
+        """
+
+        if make_dir_if_not_present and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        for k, v in self.items():
+            with zopen(os.path.join(output_dir, k), "wt") as f:
+                f.write(v.__str__())
+
+    @staticmethod
+    def from_directory(input_dir, casename = None, optional_files = None):
+        """
+        Read in a WIEN2k case from a directory. Note that only case.struct, .in0,
+            .in1(c), .in2(c), .inc, .inm, .inso, .inst, .kgen, .klist, are read
+            unless optional_filenames is specified.
+
+        TODO: figure out what to read and progress through this
+        :param input_dir (str): case directory to read
+        :param optional_files (dict): Optional files to read in as well as a dict
+            of {filename: Object type}. Object type must have a static method from_file
+        :return: WIEN2kInput object
+        """
+
+        sub_d = {}
+        if casename is None:
+            case = os.path.basename(input_dir)
+        else:
+            case = casename
+        for fname, ftype in [(case + ".struct", Struct), (case + ".in0", In0),
+                             (case + ".in1", In1), (case + ".in2", In2),
+                             (case + ".inc", Inc), (case + ".inm", Inm),
+                             (case + ".inso", Inso), (case + ".inst", Inst),
+                             (case + ".kgen", Kgen), (case + ".klist", Klist)]:
+            fullzpath = zpath(os.path.join(input_dir, fname))
+            sub_d[fname.lower()] = ftype.from_file(fullzpath)
+        sub_d["optional_files"] = {}
+        if optional_files is not None:
+            for fname, ftype in optional_files.items():
+                sub_d["optional_files"][fname] = \
+                    ftype.from_file(os.path.join(input_dir, fname))
+        return WIEN2kInput(**sub_d)
+
 
