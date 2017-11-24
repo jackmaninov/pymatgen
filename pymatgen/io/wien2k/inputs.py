@@ -50,12 +50,14 @@ class Struct(MSONable):
     case.struct reader/writer
     """
 
-    def __init__(self, structure, comment=None, relativistic=True):
+    def __init__(self, structure, comment=None, relativistic=True, symops=None, lattice=None):
         if structure.is_ordered:
             site_properties = {}
             self.comment = structure.formula if comment is None else comment
             self.relativistic = relativistic
             self.structure = structure.copy(site_properties=site_properties)
+            self.symops = symops
+            self.lattice = lattice
         else:
             raise ValueError("Structure with partial occupancies cannot be "
                              "converted into a WIEN2k struct!")
@@ -138,8 +140,6 @@ class Struct(MSONable):
             relativistic = RELA.get(reader3.read(lines[2])[0])
         except:
             raise ValueError("Unclear relativistic mode in STRUCT")
-        #line 3 can also contain unit=ang to indicate angstroms
-        inbohr = False if "unit=ang" in lines[2] else True
 
         if debug: print("RELA", relativistic)
         if debug: print("in Bohrs?: ", inbohr)
@@ -156,12 +156,10 @@ class Struct(MSONable):
             raise ValueError("Error reading unit cell parameters")
 
         #convert bohrs to angstroms
-        if inbohr:
-            bohr = const.physical_constants['atomic unit of length'][0] * 10**(10)
-            a *= bohr
-            b *= bohr
-            c *= bohr
-
+        bohr = const.physical_constants['atomic unit of length'][0] * 10**(10)
+        a *= bohr
+        b *= bohr
+        c *= bohr
         #construct lattice
         if structtype is LATTYPE['P']:              #primative (not hexagonal)
             lattice = Lattice.from_parameters(a, b, c, alpha, beta, gamma)
@@ -196,6 +194,8 @@ class Struct(MSONable):
                                [0, 0, c]])
         else:
             raise ValueError('Unknown STRUCT type')
+
+        #TODO implement hex/rhomb coordinates
 
         if debug: print("Lattice: ", lattice)
 
@@ -243,7 +243,7 @@ class Struct(MSONable):
                 try:
                     if debug: print("on line ", currentline, ": ", lines[currentline])
                     if debug: print (reader5.read(lines[currentline]))
-                    altcoords.append(reader5.read(lines[currentline]))
+                    altcoords.append(reader5.read(lines[currentline])[1:])
                 except:
                     raise ValueError('Improper multiplicity on Atom ', i)
                 currentline += 1
@@ -251,6 +251,8 @@ class Struct(MSONable):
                 [atomname, NPT, R0, RMT, Z] = reader7.read(lines[currentline])
             except:
                 raise ValueError('Bad site parameters on Atom ', i)
+
+
             currentline += 1
             ROTLOC=[]
             for rotlocline in lines[currentline:currentline + 3]:
@@ -261,18 +263,16 @@ class Struct(MSONable):
                     raise ValueError('Error reading ROTLOC on site ', i)
             currentline += 3
 
-            #TODO append a Site object to sites() here
-
-            species.append(Element.from_Z(int(Z))) #NOTE: WIEN2k supports non-integer Z!
-            coords.append([float(x), float(y), float(z)])
-
-            sitenames.append(atomname.strip())
-            NPTs.append(NPT)
-            R0s.append(R0)
-            RMTs.append(RMT)
-            Zs.append(Z)
-            altcoordss.append(altcoords)
-            ROTLOCs.append(ROTLOC)
+            for site in [[float(x), float(y), float(z)]] + altcoords:
+                species.append(Element.from_Z(int(Z)))  #NOTE: WIEN2k supports non-integer Z!
+                coords.append(site)
+                sitenames.append(atomname.strip())
+                NPTs.append(NPT)
+                R0s.append(R0)
+                RMTs.append(RMT)
+                Zs.append(Z)
+                altcoordss.append(altcoords)
+                ROTLOCs.append(ROTLOC)
 
             if debug:
                 print(atomindex, x, y, z, ROTLOC)
@@ -297,10 +297,10 @@ class Struct(MSONable):
         #build structure
 
         site_properties={'sitename': sitenames, 'NPT': NPTs, 'R0': R0s,
-                         'RMT': RMTs, 'Z': Zs, 'altcoords': altcoordss,
+                         'RMT': RMTs, 'Z': Zs,
                          'ROTLOC': ROTLOCs}
 
-
+        if debug: print(site_properties)
         if debug: print (species)
         if debug: print(coords)
         if debug: print(site_properties)
@@ -309,7 +309,8 @@ class Struct(MSONable):
                            validate_proximity=False,coords_are_cartesian=False,
                            site_properties=site_properties)
 
-        return Struct(struct, comment=comment, relativistic=relativistic)
+        return Struct(struct, comment=comment, relativistic=relativistic, symops=symops,
+                      lattice=lattice)
 
 class Klist_supported_modes(Enum):
     Automatic = 0
