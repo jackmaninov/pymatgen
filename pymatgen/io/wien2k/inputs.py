@@ -312,6 +312,64 @@ class Struct(MSONable):
         return Struct(struct, comment=comment, relativistic=relativistic, symops=symops,
                       lattice=lattice)
 
+    def get_string(self):
+        """
+
+        :return: string representation of the struct
+        """
+
+        latt = self.structure.lattice
+        lines = [self.comment]
+
+        # line 2
+        # for now, output all lattices as P
+        writer2 = ff.FortranRecordWriter('(A4,A23,I3)')
+        lines.append(writer2.write(['P   ', "LATTICE,NONEQUIV.ATOMS:",
+                                   self.structure.num_sites]))
+
+        # line 3
+        lines.append("MODE OF CALC=" + "RELA" if self.relativistic else "NREL")
+
+        # line 4
+        writer4 = ff.FortranRecordWriter('(6F10.6)')
+        lines.append(writer4.write(list(latt.abc)+list(latt.angles)))
+
+        # line 5 - 7
+        writer5 = ff.FortranRecordWriter('(A4,I4,A4,F10.8,A3,F10.8,A3,F10.8)')
+        writer6 = ff.FortranRecordWriter('(A15,I2,A17,I2)')
+        writer7 = ff.FortranRecordWriter('(A10,A5,I5,A5,F10.8,A5,F10.5,A5,F10.5)')
+        writer8 = ff.FortranRecordWriter('(A20,3F10.7)')
+
+        for (i,site) in enumerate(self.structure):
+            coords = site.frac_coords
+            lines.append(writer5.write(['ATOM', i, ': X=', coords[0], ' Y=',
+                                       coords[1], ' Z=', coords[2]]))
+            lines.append(writer6.write(['MULT=', 1, 'ISPLIT=', 0]))
+            lines.append(writer7.write([str(site.specie).ljust(10),
+                                        ' NPT=', self.structure.site_properties['NPT'][i],
+                                        '  R0=', self.structure.site_properties['R0'][i],
+                                        ' RMT=', self.structure.site_properties['RMT'][i],
+                                        '   Z:', site.Z]))
+            lines.append(writer8.write(['LOCAL ROT MATRIX:'.ljust(20), 1, 0, 0]))
+            lines.append(writer8.write(['', 0, 1, 0]))
+            lines.append(writer8.write(['', 0, 0, 1]))
+            #TODO extract LOCROT, but otherwise let x symmetry generate it
+
+        # lines 11 - 15
+
+        writer11 = ff.FortranRecordWriter('(I4,A35)')
+        writer12 = ff.FortranRecordWriter('(3I2,F10.7)')
+        writer15 = ff.FortranRecordWriter('(I8)')
+
+        lines.append(writer11.write([len(self.symops), 'NUMBER OF SYMMETRY OPERATIONS'.rjust(35)]))
+        for (i,symop) in enumerate(self.symops):
+            for line in symop:
+                lines.append(writer12.write(line))
+            lines.append(writer15.write([i]))
+
+        return "\n".join(lines)
+
+
 class Klist_supported_modes(Enum):
     Automatic = 0
     Gamma = 1
