@@ -18,6 +18,7 @@ from collections import OrderedDict, namedtuple
 from hashlib import md5
 import fortranformat as ff
 
+
 from monty.io import zopen
 from monty.os.path import zpath
 from monty.json import MontyDecoder
@@ -132,7 +133,7 @@ class Struct(MSONable):
         reader3 = ff.FortranRecordReader('(13X,A4)')
         try:
             relativistic = rela.get(reader3.read(lines[2])[0])
-        except:
+        except ValueError:
             raise ValueError("Unclear relativistic mode in STRUCT")
 
         # line 4:
@@ -140,10 +141,13 @@ class Struct(MSONable):
         try:
             [a, b, c, alpha, beta, gamma] = reader4.read(lines[3])
             assert (a is not None or b is not None or c is not None), 'Missing unit cell parameter'
-            if alpha is None: alpha = 90.0
-            if beta is None: beta = 90.0
-            if gamma is None: gamma = 90.0
-        except:
+            if alpha is None:
+                alpha = 90.0
+            if beta is None:
+                beta = 90.0
+            if gamma is None:
+                gamma = 90.0
+        except ValueError:
             raise ValueError("Error reading unit cell parameters")
 
         # convert bohrs to angstroms
@@ -195,7 +199,7 @@ class Struct(MSONable):
         reader8 = ff.FortranRecordReader('(20X,3F10.7)')
         reader11 = ff.FortranRecordReader('(I4)')
         reader12 = ff.FortranRecordReader('(3I2,F10.7)')
-        reader15 = ff.FortranRecordReader('(I8)')
+        # reader15 = ff.FortranRecordReader('(I8)')  #not used
 
         species = []
         coords = []
@@ -208,52 +212,52 @@ class Struct(MSONable):
         altcoordss = []
         rotlocs = []
 
-
         currentline = 4
 
         for i in range(natoms):
             # site line 1 (ex: ATOM    1: X=...)
             try:
-                [atomindex, x, y, z] = reader5.read(lines[currentline])
-            except:
-                raise ValueError('Error reading coordinates of Atom ', i)
+                [sitenumber, x, y, z] = reader5.read(lines[currentline])
+                assert sitenumber == i + 1
+            except ValueError:
+                raise ValueError('Error reading coordinates of Atom ', i + 1)
             currentline += 1
             # site line 2 (ex: MULT= 1 ISPLIT = 2)
             try:
                 [multiplicity, isplit] = reader6.read(lines[currentline])
-            except:
-                raise ValueError('Bad multiplicity/ISPLIT on Atom ', i)
+            except ValueError:
+                raise ValueError('Bad multiplicity/ISPLIT on Atom ', i + 1)
             currentline += 1
             altcoords = []
             for j in range(multiplicity - 1):  # Read alternate site coordinates
                 try:
                     altcoords.append(reader5.read(lines[currentline])[1:])
-                except:
-                    raise ValueError('Improper multiplicity on Atom ', i)
+                except ValueError:
+                    raise ValueError('Improper multiplicity on Atom ', i + 1)
                 currentline += 1
             try:
-                [atomname, npt, r0, rmt, atomicZ] = reader7.read(lines[currentline])
-            except:
-                raise ValueError('Bad site parameters on Atom ', i)
+                [atomname, npt, r0, rmt, atomic_z] = reader7.read(lines[currentline])
+            except ValueError:
+                raise ValueError('Bad site parameters on Atom ', i + 1)
 
             currentline += 1
             rotloc = []
             for rotlocline in lines[currentline:currentline + 3]:
                 try:
                     rotloc.append(reader8.read(rotlocline))
-                except:
-                    raise ValueError('Error reading ROTLOC on site ', i)
+                except ValueError:
+                    raise ValueError('Error reading ROTLOC on site ', i + 1)
             currentline += 3
 
             for site in [[float(x), float(y), float(z)]] + altcoords:
-                species.append(Element.from_Z(int(atomicZ)))  # NOTE: WIEN2k supports non-integer Z!
+                species.append(Element.from_Z(int(atomic_z)))  # NOTE: WIEN2k supports non-integer Z!
                 coords.append(site)
                 sitenames.append(atomname.strip())
                 isplits.append(isplit)
                 npts.append(npt)
                 r0s.append(r0)
                 rmts.append(rmt)
-                zs.append(atomicZ)
+                zs.append(atomic_z)
                 altcoordss.append(altcoords)
                 rotlocs.append(rotloc)
 
@@ -268,7 +272,7 @@ class Struct(MSONable):
                 symop.append(reader12.read(symopline))
             currentline += 3
             symops.append(symop)
-            symopindex = reader15.read(lines[currentline])
+            # symopindex = reader15.read(lines[currentline]) #not necessary to store this
             currentline += 1
             # assert symopindex = i+1,'Misordered symmetry operations'
 
@@ -322,10 +326,10 @@ class Struct(MSONable):
                                         '  R0=', self.structure.site_properties['R0'][i],
                                         ' RMT=', self.structure.site_properties['RMT'][i],
                                         '   Z:', site.Z]))
-            ROTLOC = self.structure.site_properties['ROTLOC'][i]
-            lines.append(writer8.write(['LOCAL ROT MATRIX:'.ljust(20), *ROTLOC[0]]))
-            lines.append(writer8.write(['', *ROTLOC[1]]))
-            lines.append(writer8.write(['', *ROTLOC[2]]))
+            rotloc = self.structure.site_properties['ROTLOC'][i]
+            lines.append(writer8.write(['LOCAL ROT MATRIX:'.ljust(20)] + rotloc[0]))
+            lines.append(writer8.write([''] + rotloc[1]))
+            lines.append(writer8.write([''] + rotloc[2]))
 
         # lines 11 - 15
 
@@ -342,10 +346,11 @@ class Struct(MSONable):
         return "\n".join(lines)
 
 
-class Klist_supported_modes(Enum):
+class KListSupportedModes(Enum):
     Automatic = 0
     Gamma = 1
     Monkhorst = 2
+    #TODO factor this out, since the paradigm doesn't apply
 
     def __str__(self):
         return self.name
@@ -353,23 +358,23 @@ class Klist_supported_modes(Enum):
     @staticmethod
     def from_string(s):
         c = s.lower()[0]
-        for m in Klist_supported_modes:
+        for m in KListSupportedModes:
             if m.name.lower()[0] == c:
                 return m
         raise ValueError("Can't interprete Kpoint mode %s" % s)
 
 
-class Klist(MSONable):
+class KList(MSONable):
     """
     case.klist reader/writer
     """
-    supported_modes = Klist_supported_modes
+    supported_modes = KListSupportedModes
 
     def __init__(self, comment="Default gamma", num_kpts=0,
                  style=supported_modes.Gamma,
                  kpts=((1, 1, 1),), kpts_shift=(0, 0, 0),
                  kpts_weights=None, coord_type=None, labels=None,
-                 tet_number=0, tet_weight=0, tet_connctions=None):
+                 tet_number=0, tet_weight=0):
         """
         WIEN2k Kpoint class constructor.
 
@@ -390,10 +395,7 @@ class Klist(MSONable):
                 tetrahedrons for the tetrahedron method.¬
             tet_weight: For explicit kpoints, specifies the weight for each¬
                 tetrahedron for the tetrahedron method.¬
-            tet_connections: For explicit kpoints, specifies the connections¬
-                of the tetrahedrons for the tetrahedron method.¬
-                format is a list of tuples, [ (sym_weight, [tet_vertices]),¬
-                ...]¬
+
         The default behavior of the construtor is for a Gamma centered,
         1x1x1 k-point grid with no shift.
         """
@@ -402,6 +404,7 @@ class Klist(MSONable):
         self.num_kpts = num_kpts
         self.kpts = kpts
         self.style = style
+        self._style = None
         self.coord_type = coord_type
         self.kpts_weights = kpts_weights
         self.kpts_shift = kpts_shift
@@ -416,11 +419,11 @@ class Klist(MSONable):
     @style.setter
     def style(self, style):
         if isinstance(style, six.string_types):
-            style = Klist.supported_modes.from_string(style)
+            style = KList.supported_modes.from_string(style)
 
-        if style in (Klist.supported_modes.Automatic,
-                     Klist.supported_modes.Gamma,
-                     Klist.supported_modes.Monkhorst) and len(self.kpts) > 1:
+        if style in (KList.supported_modes.Automatic,
+                     KList.supported_modes.Gamma,
+                     KList.supported_modes.Monkhorst) and len(self.kpts) > 1:
             raise ValueError("For fully automatic or automatic gamma or monk "
                              "kpoints, only a single line for the number of "
                              "divisions is allowed.")
@@ -442,8 +445,8 @@ class Klist(MSONable):
         Returns:
             Kpoints object
         """
-        return Klist("Fully automatic kpoint scheme", 0,
-                     style=Klist.supported_modes.Automatic,
+        return KList("Fully automatic kpoint scheme", 0,
+                     style=KList.supported_modes.Automatic,
                      kpts=[[subdivisions]])
 
     @staticmethod
@@ -460,8 +463,8 @@ class Klist(MSONable):
         Returns:
             Kpoints object
         """
-        return Klist("Automatic kpoint scheme", 0,
-                     Klist.supported_modes.Gamma, kpts=[kpts],
+        return KList("Automatic kpoint scheme", 0,
+                     KList.supported_modes.Gamma, kpts=[kpts],
                      kpts_shift=shift)
 
     @staticmethod
@@ -478,8 +481,8 @@ class Klist(MSONable):
         Returns:
             Kpoints object
         """
-        return Klist("Automatic kpoint scheme", 0,
-                     Klist.supported_modes.Monkhorst, kpts=[kpts],
+        return KList("Automatic kpoint scheme", 0,
+                     KList.supported_modes.Monkhorst, kpts=[kpts],
                      kpts_shift=shift)
 
     @staticmethod
@@ -496,8 +499,8 @@ class Klist(MSONable):
         Returns:
             Kpoints object
         """
-        return Klist("Automatic kpoint scheme", 0,
-                     Klist.supported_modes.Monkhorst, kpts=[kpts],
+        return KList("Automatic kpoint scheme", 0,
+                     KList.supported_modes.Monkhorst, kpts=[kpts],
                      kpts_shift=shift)
 
     @staticmethod
@@ -518,7 +521,7 @@ class Klist(MSONable):
                 use gamma only for hexagonal cells or odd meshes)
 
         Returns:
-            Klist
+            KList
         """
         comment = "pymatgen 4.7.6+ generated KPOINTS with grid density = " + \
                   "%.0f / atom" % kppa
@@ -535,11 +538,11 @@ class Klist(MSONable):
 
         has_odd = any([i % 2 == 1 for i in num_div])
         if has_odd or is_hexagonal or force_gamma:
-            style = Klist.supported_modes.Gamma
+            style = KList.supported_modes.Gamma
         else:
-            style = Klist.supported_modes.Monkhorst
+            style = KList.supported_modes.Monkhorst
 
-        return Klist(comment, 0, style, [num_div], [0, 0, 0])
+        return KList(comment, 0, style, [num_div], [0, 0, 0])
 
     @staticmethod
     def automatic_density_by_vol(structure, kppvol, force_gamma=False):
@@ -556,11 +559,11 @@ class Klist(MSONable):
             force_gamma (bool): Force a gamma centered mesh
 
         Returns:
-            Klist
+            KList
         """
         vol = structure.lattice.reciprocal_lattice.volume
         kppa = kppvol * vol * structure.num_sites
-        return Klist.automatic_density(structure, kppa,
+        return KList.automatic_density(structure, kppa,
                                        force_gamma=force_gamma)
 
     @staticmethod
@@ -575,7 +578,7 @@ class Klist(MSONable):
             Kpoints object
         """
         with zopen(filename, "rt") as f:
-            return Klist.from_string(f.read())
+            return KList.from_string(f.read())
 
     @staticmethod
     def from_string(string):
@@ -597,25 +600,26 @@ class Klist(MSONable):
         lines = [line.strip() for line in string.splitlines()]
 
         for line_number, line in enumerate(lines):
-            if line == "END": break
+            if line == "END":
+                break
             if line_number == 1:
                 try:
-                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV, junk1, junk2, num_kpts0, n_divx, n_divy, ndivz] = reader1.read(
+                    [kpt, k_x, k_y, k_z, k_weight, i_div, junk1, junk2, num_kpts0, n_divx, n_divy, ndivz] = reader1.read(
                         line)
-                    if KX == KY == KZ == 0: style = Klist.supported_modes.Gamma
-                except:
+                    style = KList.supported_modes.Gamma if k_x == k_y == k_z == 0 else KList.supported_modes.Monkhorst
+                except ValueError:
                     raise ValueError('Error reading first k-point', line)
             else:
                 try:
-                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV] = reader.read(line)
-                except:
+                    [kpt, k_x, k_y, k_z, k_weight, i_div] = reader.read(line)
+                except ValueError:
                     raise ValueError('Error reading k-point:', line)
 
-            kpts.append([float(KX / IDIV), float(KY / IDIV), float(KZ / IDIV)])
-            kpts_weights.append(float(K_WEIGHT))
+            kpts.append([float(k_x / i_div), float(k_y / i_div), float(k_z / i_div)])
+            kpts_weights.append(float(k_weight))
 
-        return Klist.gamma_automatic(kpts) if style == Klist.supported_modes.Gamma \
-            else Klist.monkhorst_automatic(kpts)
+        return KList.gamma_automatic(kpts) if style == KList.supported_modes.Gamma \
+            else KList.monkhorst_automatic(kpts)
 
 
 # class In0(MSONable):
@@ -713,7 +717,7 @@ class WIEN2kInput(dict, MSONable):
                              (case + ".in1", In1), (case + ".in2", In2),
                              (case + ".inc", Inc), (case + ".inm", Inm),
                              (case + ".inso", Inso), (case + ".inst", Inst),
-                             (case + ".kgen", Kgen), (case + ".klist", Klist)]:
+                             (case + ".kgen", Kgen), (case + ".klist", KList)]:
             fullzpath = zpath(os.path.join(input_dir, fname))
             sub_d[fname.lower()] = ftype.from_file(fullzpath)
         sub_d["optional_files"] = {}
