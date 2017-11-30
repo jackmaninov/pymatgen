@@ -41,9 +41,8 @@ Classes for reading/manipulating/writing WIEN2k input files. Initial focus is
 on case.struct, case.inc, case.inm, case.inso, case.int, case.inorb, case.klist
 """
 
-
-
 logger = logging.getLogger(__name__)
+
 
 class Struct(MSONable):
     """
@@ -81,10 +80,10 @@ class Struct(MSONable):
         return [a[0] for a in itertools.groupby(syms)]
 
     def __setattr__(self, name, value):
-        super(Struct, self).__setattr__(name, value) # how is this not recursive?
+        super(Struct, self).__setattr__(name, value)  # how is this not recursive?
 
     @staticmethod
-    def from_file(filename, debug=0):
+    def from_file(filename):
         """
         read from a case.struct file
         :param filename: case.struct name (string)
@@ -92,24 +91,21 @@ class Struct(MSONable):
         """
 
         with zopen(filename, "rt") as f:
-            return Struct.from_string(f.read(), debug)
+            return Struct.from_string(f.read())
 
     @staticmethod
-    def from_string(data, debug=0):
+    def from_string(data):
         """
 
         :param data: string containing case.struct
         :return: Struct
         """
 
-        LATTYPE = {'P': 1, 'F': 2, 'B': 3, 'CXY': 4, 'CYZ': 5, 'CXZ': 6, 'R': 7, 'H': 8}
-        RELA = {'RELA': True, 'NREL': False}
-        UNITS  = {'ang': 1, 'bohr': 2}
-
-
+        lattype = {'P': 1, 'F': 2, 'B': 3, 'CXY': 4, 'CYZ': 5, 'CXZ': 6, 'R': 7, 'H': 8}
+        rela = {'RELA': True, 'NREL': False}
 
         chunks = re.split("\n\s*\n", data.rstrip(), flags=re.MULTILINE)
-        try:                                            #TODO: why?
+        try:
             if chunks[0] == "":
                 chunks.pop(0)
                 chunks[0] = "\n" + chunks[0]
@@ -124,27 +120,22 @@ class Struct(MSONable):
         # line 2:
         reader2 = ff.FortranRecordReader('(A4,23X,I3)')
         try:
-            structtype = LATTYPE.get(reader2.read(lines[1])[0].rstrip())
+            structtype = lattype.get(reader2.read(lines[1])[0].rstrip())
         except IndexError:
             raise ValueError("Unknown lattice type")
         try:
             natoms = reader2.read(lines[1])[1]
-        except:
+        except ValueError:
             raise ValueError("Unknown NAT")
-        if debug: print("LATTYPE=", structtype)
-        if debug: print("number atoms=", natoms)
 
-        #line 3:
+        # line 3:
         reader3 = ff.FortranRecordReader('(13X,A4)')
         try:
-            relativistic = RELA.get(reader3.read(lines[2])[0])
+            relativistic = rela.get(reader3.read(lines[2])[0])
         except:
             raise ValueError("Unclear relativistic mode in STRUCT")
 
-        if debug: print("RELA", relativistic)
-        if debug: print("in Bohrs?: ", inbohr)
-
-        #line 4:
+        # line 4:
         reader4 = ff.FortranRecordReader('(6F10.6)')
         try:
             [a, b, c, alpha, beta, gamma] = reader4.read(lines[3])
@@ -155,51 +146,48 @@ class Struct(MSONable):
         except:
             raise ValueError("Error reading unit cell parameters")
 
-        #convert bohrs to angstroms
-        bohr = const.physical_constants['atomic unit of length'][0] * 10**(10)
+        # convert bohrs to angstroms
+        bohr = const.physical_constants['atomic unit of length'][0] * 10 ** 10
         a *= bohr
         b *= bohr
         c *= bohr
-        #construct lattice
-        if structtype is LATTYPE['P']:              #primative (not hexagonal)
+        # construct lattice
+        if structtype is lattype['P']:  # primative (not hexagonal)
             lattice = Lattice.from_parameters(a, b, c, alpha, beta, gamma)
-        elif structtype is LATTYPE['F']:            #face-centered
-            lattice = Lattice([[ a/2,  b/2,    0],
-                               [ a/2,   0,   c/2],
-                               [   0,  b/2,  c/2]])
-        elif structtype is LATTYPE['B']:            #body-centered
-            lattice = Lattice([[ a/2, -b/2,  c/2],
-                               [ a/2,  b/2, -c/2],
-                               [-a/2,  b/2,  c/2]])
-        elif structtype is LATTYPE['CXY']:          #C-base-centered (orthorhombic only)
-            lattice = Lattice([[ a/2, -b/2,    0],
-                               [ a/2,  b/2,    0],
-                               [   0,    0,    c]])
-        elif structtype is LATTYPE['CYZ']:          #A-base-centered (orthorhombic only)
-            lattice = Lattice([[   a,    0,    0],
-                               [   0, -b/2,  c/2],
-                               [   0,  b/2,  c/2]]) #B-base-centered (orthorh. and monoclinic symmetry)
-        elif structtype is LATTYPE['CXZ']:
+        elif structtype is lattype['F']:  # face-centered
+            lattice = Lattice([[a / 2, b / 2, 0],
+                               [a / 2, 0, c / 2],
+                               [0, b / 2, c / 2]])
+        elif structtype is lattype['B']:  # body-centered
+            lattice = Lattice([[a / 2, -b / 2, c / 2],
+                               [a / 2, b / 2, -c / 2],
+                               [-a / 2, b / 2, c / 2]])
+        elif structtype is lattype['CXY']:  # C-base-centered (orthorhombic only)
+            lattice = Lattice([[a / 2, -b / 2, 0],
+                               [a / 2, b / 2, 0],
+                               [0, 0, c]])
+        elif structtype is lattype['CYZ']:  # A-base-centered (orthorhombic only)
+            lattice = Lattice([[a, 0, 0],
+                               [0, -b / 2, c / 2],
+                               [0, b / 2, c / 2]])  # B-base-centered (orthorh. and monoclinic symmetry)
+        elif structtype is lattype['CXZ']:
             gamma_r = math.radians(gamma)
-            lattice = Lattice([[ a * math.sin(gamma_r)/2, a * math.cos(gamma_r)/2,  -c],
-                               [ 0, b, 0],
-                               [ a * math.sin(gamma_r)/2, a * math.cos(gamma_r)/2, c/2]])
-        elif structtype is LATTYPE['R']:            #WIEN2k rhombohedral setting
-            lattice = Lattice([[ a / (math.sqrt(3)/2), -a/2, c/3],
-                               [ a / (math.sqrt(3)/2),  a/2, c/3],
-                               [-a / math.sqrt(3),        0, c/3]])
-        elif structtype is LATTYPE['H']:            #WIEN2k hexagonal setting
+            lattice = Lattice([[a * math.sin(gamma_r) / 2, a * math.cos(gamma_r) / 2, -c],
+                               [0, b, 0],
+                               [a * math.sin(gamma_r) / 2, a * math.cos(gamma_r) / 2, c / 2]])
+        # TODO implement hex/rhomb coordinates
+        elif structtype is lattype['R']:  # WIEN2k rhombohedral setting
+            lattice = Lattice([[a / (math.sqrt(3) / 2), -a / 2, c / 3],
+                               [a / (math.sqrt(3) / 2), a / 2, c / 3],
+                               [-a / math.sqrt(3), 0, c / 3]])
+        elif structtype is lattype['H']:  # WIEN2k hexagonal setting
             lattice = Lattice([[math.sqrt(3) * a / 2, -a / 2, 0],
                                [0, a, 0],
                                [0, 0, c]])
         else:
             raise ValueError('Unknown STRUCT type')
 
-        #TODO implement hex/rhomb coordinates
-
-        if debug: print("Lattice: ", lattice)
-
-        #line 5 (repeats for natoms)
+        # line 5 (repeats for natoms)
 
         reader5 = ff.FortranRecordReader('(4X,I4,4X,F10.8,3X,F10.8,3X,F10.8)')
         reader6 = ff.FortranRecordReader('(15X,I2,17X,I2)')
@@ -212,12 +200,13 @@ class Struct(MSONable):
         species = []
         coords = []
         sitenames = []
-        NPTs = []
-        R0s = []
-        RMTs = []
-        Zs = []
+        isplits = []
+        npts = []
+        r0s = []
+        rmts = []
+        zs = []
         altcoordss = []
-        ROTLOCs = []
+        rotlocs = []
 
 
         currentline = 4
@@ -228,7 +217,6 @@ class Struct(MSONable):
                 [atomindex, x, y, z] = reader5.read(lines[currentline])
             except:
                 raise ValueError('Error reading coordinates of Atom ', i)
-            if debug: print("Atomindex, x, y, z: ", atomindex, x, y, z)
             currentline += 1
             # site line 2 (ex: MULT= 1 ISPLIT = 2)
             try:
@@ -236,55 +224,46 @@ class Struct(MSONable):
             except:
                 raise ValueError('Bad multiplicity/ISPLIT on Atom ', i)
             currentline += 1
-            if debug: print("multiplicity, isplit: ", multiplicity,isplit)
-            altcoords=[]
-            for j in range(multiplicity - 1):           #Read alternate site coordinates
-                if debug: print("loop j: ",j)
+            altcoords = []
+            for j in range(multiplicity - 1):  # Read alternate site coordinates
                 try:
-                    if debug: print("on line ", currentline, ": ", lines[currentline])
-                    if debug: print (reader5.read(lines[currentline]))
                     altcoords.append(reader5.read(lines[currentline])[1:])
                 except:
                     raise ValueError('Improper multiplicity on Atom ', i)
                 currentline += 1
             try:
-                [atomname, NPT, R0, RMT, Z] = reader7.read(lines[currentline])
+                [atomname, npt, r0, rmt, atomicZ] = reader7.read(lines[currentline])
             except:
                 raise ValueError('Bad site parameters on Atom ', i)
 
-
             currentline += 1
-            ROTLOC=[]
+            rotloc = []
             for rotlocline in lines[currentline:currentline + 3]:
                 try:
-                    ROTLOC.append(reader8.read(rotlocline))
-                    if debug: print ("ROTLOC:", ROTLOC[-1])
+                    rotloc.append(reader8.read(rotlocline))
                 except:
                     raise ValueError('Error reading ROTLOC on site ', i)
             currentline += 3
 
             for site in [[float(x), float(y), float(z)]] + altcoords:
-                species.append(Element.from_Z(int(Z)))  #NOTE: WIEN2k supports non-integer Z!
+                species.append(Element.from_Z(int(atomicZ)))  # NOTE: WIEN2k supports non-integer Z!
                 coords.append(site)
                 sitenames.append(atomname.strip())
-                NPTs.append(NPT)
-                R0s.append(R0)
-                RMTs.append(RMT)
-                Zs.append(Z)
+                isplits.append(isplit)
+                npts.append(npt)
+                r0s.append(r0)
+                rmts.append(rmt)
+                zs.append(atomicZ)
                 altcoordss.append(altcoords)
-                ROTLOCs.append(ROTLOC)
-
-            if debug:
-                print(atomindex, x, y, z, ROTLOC)
+                rotlocs.append(rotloc)
 
         [nsym] = reader11.read(lines[currentline])
-        if debug: print("NSYM: ", nsym)
         currentline += 1
 
-        symops=[]
+        symops = []
 
         for i in range(nsym):
-            symop=[]
+            symop = []
             for symopline in lines[currentline:currentline + 3]:
                 symop.append(reader12.read(symopline))
             currentline += 3
@@ -292,21 +271,13 @@ class Struct(MSONable):
             symopindex = reader15.read(lines[currentline])
             currentline += 1
             # assert symopindex = i+1,'Misordered symmetry operations'
-            if debug: print ("Symop ", i, ": ", symops[-1])
 
-        #build structure
+        # build structure
 
-        site_properties={'sitename': sitenames, 'NPT': NPTs, 'R0': R0s,
-                         'RMT': RMTs, 'Z': Zs,
-                         'ROTLOC': ROTLOCs}
-
-        if debug: print(site_properties)
-        if debug: print (species)
-        if debug: print(coords)
-        if debug: print(site_properties)
-
+        site_properties = {'sitename': sitenames, 'ISPLIT': isplits, 'NPT': npts, 'R0': r0s,
+                           'RMT': rmts, 'Z': zs, 'ROTLOC': rotlocs}
         struct = Structure(lattice, species, coords, to_unit_cell=False,
-                           validate_proximity=False,coords_are_cartesian=False,
+                           validate_proximity=False, coords_are_cartesian=False,
                            site_properties=site_properties)
 
         return Struct(struct, comment=comment, relativistic=relativistic, symops=symops,
@@ -325,14 +296,14 @@ class Struct(MSONable):
         # for now, output all lattices as P
         writer2 = ff.FortranRecordWriter('(A4,A23,I3)')
         lines.append(writer2.write(['P   ', "LATTICE,NONEQUIV.ATOMS:",
-                                   self.structure.num_sites]))
+                                    self.structure.num_sites]))
 
         # line 3
         lines.append("MODE OF CALC=" + "RELA" if self.relativistic else "NREL")
 
         # line 4
         writer4 = ff.FortranRecordWriter('(6F10.6)')
-        lines.append(writer4.write(list(latt.abc)+list(latt.angles)))
+        lines.append(writer4.write(list(latt.abc) + list(latt.angles)))
 
         # line 5 - 7
         writer5 = ff.FortranRecordWriter('(A4,I4,A4,F10.8,A3,F10.8,A3,F10.8)')
@@ -340,20 +311,21 @@ class Struct(MSONable):
         writer7 = ff.FortranRecordWriter('(A10,A5,I5,A5,F10.8,A5,F10.5,A5,F10.5)')
         writer8 = ff.FortranRecordWriter('(A20,3F10.7)')
 
-        for (i,site) in enumerate(self.structure):
+        for i, site in enumerate(self.structure):
             coords = site.frac_coords
             lines.append(writer5.write(['ATOM', i, ': X=', coords[0], ' Y=',
-                                       coords[1], ' Z=', coords[2]]))
-            lines.append(writer6.write(['MULT=', 1, 'ISPLIT=', 0]))
-            lines.append(writer7.write([str(site.specie).ljust(10),
+                                        coords[1], ' Z=', coords[2]]))
+            lines.append(writer6.write(['MULT=', 1,
+                                        'ISPLIT=', self.structure.site_properties['ISPLIT'][i]]))
+            lines.append(writer7.write([str(self.structure.site_properties['sitename'][i]).ljust(10),
                                         ' NPT=', self.structure.site_properties['NPT'][i],
                                         '  R0=', self.structure.site_properties['R0'][i],
                                         ' RMT=', self.structure.site_properties['RMT'][i],
                                         '   Z:', site.Z]))
-            lines.append(writer8.write(['LOCAL ROT MATRIX:'.ljust(20), 1, 0, 0]))
-            lines.append(writer8.write(['', 0, 1, 0]))
-            lines.append(writer8.write(['', 0, 0, 1]))
-            #TODO extract LOCROT, but otherwise let x symmetry generate it
+            ROTLOC = self.structure.site_properties['ROTLOC'][i]
+            lines.append(writer8.write(['LOCAL ROT MATRIX:'.ljust(20), *ROTLOC[0]]))
+            lines.append(writer8.write(['', *ROTLOC[1]]))
+            lines.append(writer8.write(['', *ROTLOC[2]]))
 
         # lines 11 - 15
 
@@ -362,7 +334,7 @@ class Struct(MSONable):
         writer15 = ff.FortranRecordWriter('(I8)')
 
         lines.append(writer11.write([len(self.symops), 'NUMBER OF SYMMETRY OPERATIONS'.rjust(35)]))
-        for (i,symop) in enumerate(self.symops):
+        for (i, symop) in enumerate(self.symops):
             for line in symop:
                 lines.append(writer12.write(line))
             lines.append(writer15.write([i]))
@@ -385,6 +357,7 @@ class Klist_supported_modes(Enum):
             if m.name.lower()[0] == c:
                 return m
         raise ValueError("Can't interprete Kpoint mode %s" % s)
+
 
 class Klist(MSONable):
     """
@@ -509,7 +482,6 @@ class Klist(MSONable):
                      Klist.supported_modes.Monkhorst, kpts=[kpts],
                      kpts_shift=shift)
 
-
     @staticmethod
     def monkhorst_automatic(kpts=(2, 2, 2), shift=(0, 0, 0)):
         """
@@ -549,7 +521,7 @@ class Klist(MSONable):
             Klist
         """
         comment = "pymatgen 4.7.6+ generated KPOINTS with grid density = " + \
-            "%.0f / atom" % kppa
+                  "%.0f / atom" % kppa
         if math.fabs((math.floor(kppa ** (1 / 3) + 0.5)) ** 3 - kppa) < 1:
             kppa += kppa * 0.01
         latt = structure.lattice
@@ -617,11 +589,10 @@ class Klist(MSONable):
             Kpoints object
         """
 
-        reader=ff.FortranRecordReader('(I10,4I10,f5.1)')
-        reader1=ff.FortranRecordReader('(I10,4I10,3f5.1,2x,i8,\' k, div: (\',3i3,\')\')')
+        reader = ff.FortranRecordReader('(I10,4I10,f5.1)')
+        reader1 = ff.FortranRecordReader('(I10,4I10,3f5.1,2x,i8,\' k, div: (\',3i3,\')\')')
         kpts = []
         kpts_weights = []
-
 
         lines = [line.strip() for line in string.splitlines()]
 
@@ -629,22 +600,23 @@ class Klist(MSONable):
             if line == "END": break
             if line_number == 1:
                 try:
-                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV, junk1, junk2, num_kpts0, n_divx, n_divy, ndivz ] = reader1.read (line)
+                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV, junk1, junk2, num_kpts0, n_divx, n_divy, ndivz] = reader1.read(
+                        line)
                     if KX == KY == KZ == 0: style = Klist.supported_modes.Gamma
                 except:
                     raise ValueError('Error reading first k-point', line)
             else:
                 try:
-                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV] = reader.read (line)
+                    [KPT, KX, KY, KZ, K_WEIGHT, IDIV] = reader.read(line)
                 except:
                     raise ValueError('Error reading k-point:', line)
 
-            kpts.append([float(KX/IDIV), float(KY/IDIV), float(KZ/IDIV)])
+            kpts.append([float(KX / IDIV), float(KY / IDIV), float(KZ / IDIV)])
             kpts_weights.append(float(K_WEIGHT))
-
 
         return Klist.gamma_automatic(kpts) if style == Klist.supported_modes.Gamma \
             else Klist.monkhorst_automatic(kpts)
+
 
 # class In0(MSONable):
 #
@@ -668,22 +640,21 @@ class WIEN2kInput(dict, MSONable):
     Class to contain a set of WIEN2k input objects, corresponding to a 'case'.
     """
 
-
     def __init__(self, struct, kpoints, optional_files=None,
                  **kwargs):
         super
         self.update({'struct': struct,
-                    'kpoints': kpoints})
+                     'kpoints': kpoints})
         if optional_files is not None:
             self.update(optional_files)
 
     def __str__(self):
-            output = []
-            for k, v in self.items():
-                output.append(k)
-                output.append(str(v))
-                output.append("")
-            return "\n".join(output)
+        output = []
+        for k, v in self.items():
+            output.append(k)
+            output.append(str(v))
+            output.append("")
+        return "\n".join(output)
 
     def as_dict(self):
         d = {k: v.as_dict() for k, v in self.items()}
@@ -720,7 +691,7 @@ class WIEN2kInput(dict, MSONable):
                 f.write(v.__str__())
 
     @staticmethod
-    def from_directory(input_dir, casename = None, optional_files = None):
+    def from_directory(input_dir, casename=None, optional_files=None):
         """
         Read in a WIEN2k case from a directory. Note that only case.struct, .in0,
             .in1(c), .in2(c), .inc, .inm, .inso, .inst, .kgen, .klist, are read
@@ -751,5 +722,3 @@ class WIEN2kInput(dict, MSONable):
                 sub_d["optional_files"][fname] = \
                     ftype.from_file(os.path.join(input_dir, fname))
         return WIEN2kInput(**sub_d)
-
-
