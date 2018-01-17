@@ -12,12 +12,13 @@ import logging
 import math
 
 import six
+from six import string_types
 import numpy as np
 from numpy.linalg import det
 from collections import OrderedDict, namedtuple
 from hashlib import md5
 import fortranformat as ff
-
+from copy import deepcopy
 
 from monty.io import zopen
 from monty.os.path import zpath
@@ -33,7 +34,7 @@ from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import Structure
 from pymatgen.core.periodic_table import Element, get_el_sp
 from monty.design_patterns import cached_class
-from pymatgen.util.string_utils import str_delimited
+from pymatgen.util.string import str_delimited
 from pymatgen.util.io_utils import clean_lines
 from monty.json import MSONable
 
@@ -350,7 +351,8 @@ class KListSupportedModes(Enum):
     Automatic = 0
     Gamma = 1
     Monkhorst = 2
-    #TODO factor this out, since the paradigm doesn't apply
+
+    # TODO factor this out, since the paradigm doesn't apply
 
     def __str__(self):
         return self.name
@@ -604,7 +606,8 @@ class KList(MSONable):
                 break
             if line_number == 1:
                 try:
-                    [kpt, k_x, k_y, k_z, k_weight, i_div, junk1, junk2, num_kpts0, n_divx, n_divy, ndivz] = reader1.read(
+                    [kpt, k_x, k_y, k_z, k_weight, i_div, junk1, junk2, num_kpts0, n_divx, n_divy,
+                     ndivz] = reader1.read(
                         line)
                     style = KList.supported_modes.Gamma if k_x == k_y == k_z == 0 else KList.supported_modes.Monkhorst
                 except ValueError:
@@ -726,3 +729,313 @@ class WIEN2kInput(dict, MSONable):
                 sub_d["optional_files"][fname] = \
                     ftype.from_file(os.path.join(input_dir, fname))
         return WIEN2kInput(**sub_d)
+
+
+VALID_TELNES3_TAGS = ("VERBOSITY", "ATOMS", "DETECTOR POSITION", "MODUS", "SPLIT",
+                      "BRANCHING RATIO", "NONRELATIVISTIC", "RELATIVISTIC", "INITIALIZATION",
+                      "QGRID", "ORIENTATION SENSITIVE", "SELECTION RULE", "LSELECTION RULE",
+                      "EXTEND POTENTIALS", "FERMI ENERGY", "CORE WAVEFUNCTION",
+                      "FINAL STATE WAVEFUNCTION", "NOHEADERS", "DOSONLY", "NBTOT", "END")
+
+
+class TelnesTags(dict):
+    """
+    TELNES3 optional control parameters
+
+    """
+
+    def __init__(self, params=None):
+        """
+        :param params: a dictionary of input parameters
+        """
+        super(TelnesTags, self).__init__()
+        if params:
+            self.update(params)
+
+    def __setitem__(self, key, val):
+        """
+        Add parameter-val pair. Warns is parameter is not in the list of valid TELNES tags.
+        Also strips parameter and val.
+        :param key: dict key value
+        :param val: value to be associated with key in dict
+        :return:
+        """
+        if key.strip().upper() not in VALID_TELNES3_TAGS:
+            warnings.warn(key.strip() + " not in VALID_TENLES3_TAGS list")
+        super(TelnesTags, self).__setitem__(key.strip(),
+                                            TelnesTags.proc_val(key.strip(), val.strip())
+                                            if isinstance(val, string_types) else val)
+
+    def as_dict(self):
+        """
+        Dict representation
+
+        :return: dict of paremeters from telnestags object
+        """
+
+        tags_dict = dict(self)
+        tags_dict['@module'] = self.__class__.__module__
+        tags_dict['@class'] = self.__class__.__name__
+        return tags_dict
+
+    @staticmethod
+    def from_dict(d):
+        """
+        Creates Tags object from a dictionary.
+
+        Args:
+            d: Dict of feff parameters and values.
+
+        Returns:
+            Tags object
+        """
+        i = TelnesTags()
+        for k, v in d.items():
+            if k not in ("@module", "@class"):
+                i[k] = v
+        return i
+
+    def get_string(self, sort_keys=False, pretty=False):
+        """
+        Returns a string representation of the TelnesTags.  The reason why this
+        method is different from the __str__ method is to provide options
+        for pretty printing.
+
+        Args:
+            sort_keys: Set to True to sort the Telnes parameters alphabetically.
+                Defaults to False.
+            pretty: Set to True for pretty aligned output. Defaults to False.
+
+        Returns:
+            String representation of TelnesTags.
+        """
+        keys = self.keys()
+        if sort_keys:
+            keys = sorted(keys)
+        lines = []
+        for k in keys:
+            lines.append([k, self._stringify_val(self[k])])
+        if pretty:
+            return tabulate(lines)
+        else:
+            return str_delimited(lines, None, " ")
+
+    @staticmethod
+    def _stringify_val(val):
+        """
+        Convert the given value to string.
+        """
+        if isinstance(val, list):
+            return " ".join([str(i) for i in val])
+        else:
+            return str(val)
+
+    def __str__(self):
+        return self.get_string()
+
+    @staticmethod
+    def fromstring(input):
+        """
+        Read the optional tag components of a case.innes file
+        :param input: input string
+        :return: TelnesTags object
+        """
+        params = {}
+
+        lines = list(clean_lines(input.split('\n')))
+        for i, line in enumerate(lines):
+            key = line.strip()
+            if key in VALID_TELNES3_TAGS:
+                if key == "END":
+                    break
+                elif key == "INITIALIZATION":
+                    params[key] = [lines[i + 1].strip().split(), lines[i + 2].strip().split()]
+                elif key == "QGRID":
+                    params[key] = [lines[i+1]]
+                    if params[key].upper() == "L":
+                        params[key] = ["L", float(lines[i + 2].strip())]
+                elif key not in ("DOSONLY", "NONRELATIVISTIC", "NOHEADERS"):
+                    params[key] = lines[i + 1]
+                elif key in ("DOSONLY", "NONRELATIVISTIC", "NOHEADERS"):
+                    params[key] = True
+                else:
+                    warnings.warn(key + " parameter invalid")
+
+        return TelnesTags(params)
+
+    @staticmethod
+    def proc_val(key, val):
+        """
+        Static helper method to convert Telnes parameters to proper types
+        :param key: Telnes parameter key
+        :param val: Actual value of Telnes parameter
+        :return: properly formatted parameter
+        """
+
+        list_type_keys = ("ATOMS", "DETECTOR POSITION", "ORIENTATION SENSITIVE", "EXTEND POTENTIALS",
+                          "QGRID")
+        boolean_type_keys = ()
+        float_type_keys = ("SPLIT", "BRANCHING RATIO", "FERMI ENERGY")
+        int_type_keys = ("VERBOSITY", "RELATIVISTIC")
+
+        def smart_int_or_float(numstr):
+            if numstr.find(".") != -1 or numstr.lower().find("e") != -1:
+                return float(numstr)
+            else:
+                return int(numstr)
+
+        try:
+            if key.lower() == 'cif':
+                m = re.search(r"\w+.cif", val)
+                return m.group(0)
+
+            if key in list_type_keys:
+                output = list()
+                toks = re.split(r"\s+", val)
+
+                for tok in toks:
+                    m = re.match(r"(\d+)\*([\d\.\-\+]+)", tok)
+                    if m:
+                        output.extend([smart_int_or_float(m.group(2))] *
+                                      int(m.group(1)))
+                    else:
+                        output.append(smart_int_or_float(tok))
+                return output
+            if key in boolean_type_keys:
+                m = re.search(r"^\W+([TtFf])", val)
+                if m:
+                    if m.group(1) == "T" or m.group(1) == "t":
+                        return True
+                    else:
+                        return False
+                raise ValueError(key + " should be a boolean type!")
+
+            if key in float_type_keys:
+                return float(val)
+            if key in int_type_keys:
+                return int(val)
+
+        except ValueError:
+            return val.capitalize()
+
+        return val.capitalize()
+
+
+class Innes(MSONable):
+    pass
+
+    def __init__(self, config_dict=None, comment="EELS spectrum", absorbing_atom=1, edge='K',
+                 e_onset=535.0, e_beam=200.0, e_start=0.0, e_final=35.0, e_step=0.05,
+                 collection_sa=5.0, convergence_sa=1.87, qmesh_nr=5, qmesh_nt=2,
+                 broadening=0.30, edge_n=None, edge_l=None):
+        """
+        Initialize a case.innes file to be written
+        :param config_dict: set of optional tags to be included (defined in VALID_TELNES3_TAGS)
+        :param comment: human-readable comment
+        :param absorbing_atom: index to absorbing atom in this calculation's case.struct
+        :param edge: absorption edge to calculate. Converted into edge_n, edge_l if they are not
+        specified
+        :param e_onset: absorption onset energy, in eV
+        :param e_beam: exciting electron beam energy, in keV
+        :param e_start: starting energy of energy grid
+        :param e_final: final energy of energy grid
+        :param e_step: step size of energy grid
+        :param collection_sa: collection semiangle, in mrad
+        :param convergence_sa: convergence semiangle, in mrad
+        :param qmesh_nr: NR parameter of Q-mesh
+        :param qmesh_nt: NT parameter of Q-mesh
+        :param broadening: spectrometer broadening, in eV
+        :param edge_n: edge n-quantum number, overrides edge
+        :param edge_l: edge l-quantum number, overrides edge
+        """
+        self.absorbing_atom = absorbing_atom
+        self.edge = edge
+        self.e_onset = e_onset
+        self.e_beam = e_beam
+        self.comment = comment
+        self.config_dict = deepcopy(config_dict)
+        self.e_start = e_start
+        self.e_final = e_final
+        self.e_step = e_step
+        self.collection_sa = collection_sa
+        self.convergence_sa = convergence_sa
+        self.qmesh_nr = qmesh_nr
+        self.qmesh_nt = qmesh_nt
+        self.broadening = broadening
+
+        EDGE_DEFAULTS = {'K': [1, 0],
+                         'L1': [2, 0],
+                         'L23': [2, 1],
+                         'M1': [3, 0],
+                         'M23': [3, 1],
+                         'M45': [3, 2]}
+
+        if (edge_n or edge_l):
+            self.edge_n = edge_n
+            self.edge_l = edge_l
+        else:
+            self.edge_n, self.edge_l = EDGE_DEFAULTS[edge]
+
+    @property
+    def tags(self):
+        """
+        TELNES3 optional parameters
+        :return: the tags in config_dict
+        """
+        return TelnesTags(self.config_dict)
+
+    def __str__(self):
+
+        output.extend(["%s = %s" % (k, str(v))
+                       for k, v in six.iteritems(self.config_dict)])
+        output.append("")
+        return "\n".join(output)
+
+    def write_file(self, filename):
+        """
+        Write the case.innes file
+        :param filename: filename and path to write to
+        :return:
+        """
+        with zopen(filename, "wt") as f:
+            f.write(self.__str__() + "\n")
+
+    @staticmethod
+    def from_string(input):
+        """
+        Reads a case.innes from input
+        :param input: input string
+        :return:
+        """
+
+        lines = list(clean_lines(input.split('\n')))
+        try:
+            comment = lines[0]
+            absorbing_atom = int(lines[1])
+            edge_n, edge_l = [int(x) for x in lines[2].split()]
+            e_onset = float(lines[3])
+            e_beam = float(lines[4])
+            e_start, e_final, e_step = [float(x) for x in lines[5].split()]
+            collection_sa, convergence_sa = [float(x) for x in lines[6].split()]
+            qmesh_nr, qmesh_nt = [int(x) for x in lines[7].split()]
+            broadening = float(lines[8])
+        except:
+            warnings.warn("Formatting error in mandatory lines of " + filename)
+            return None
+
+        config_dict = TelnesTags.fromstring('\n'.join(lines[9:]))
+
+        return Innes(config_dict, comment, absorbing_atom, '', e_onset, e_beam, e_start, e_final,
+                     e_step, collection_sa, convergence_sa, qmesh_nr, qmesh_nt, broadening, edge_n,
+                     edge_l)
+
+    @staticmethod
+    def from_file(filename):
+        """
+        Reads case.innes, pulling mandatory parameters and optional tags
+        :param filename: filename to read
+        :return: Innes object
+        """
+
+        with zopen(filename, "rt") as f:
+            return Innes.from_string(f.read())
