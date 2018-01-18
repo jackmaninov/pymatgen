@@ -826,7 +826,14 @@ class TelnesTags(dict):
         Convert the given value to string.
         """
         if isinstance(val, list):
-            return " ".join([str(i) for i in val])
+            if isinstance(val[0], list): #recurse into lists of lists
+                return "\n".join([TelnesTags._stringify_val(i) for i in val])
+            elif isinstance(val[0], float):
+                return " ".join(['{:.3f}'.format(i) for i in val])
+            else:
+                return " ".join([str(i) for i in val])
+        if isinstance(val, float):
+            return '{:.3f}'.format(val)
         else:
             return str(val)
 
@@ -852,7 +859,7 @@ class TelnesTags(dict):
                     params[key] = [lines[i + 1].strip().split(), lines[i + 2].strip().split()]
                 elif key == "QGRID":
                     params[key] = [lines[i+1]]
-                    if params[key].upper() == "L":
+                    if params[key][0].upper() == "L":
                         params[key] = ["L", float(lines[i + 2].strip())]
                 elif key not in ("DOSONLY", "NONRELATIVISTIC", "NOHEADERS"):
                     params[key] = lines[i + 1]
@@ -916,9 +923,9 @@ class TelnesTags(dict):
                 return int(val)
 
         except ValueError:
-            return val.capitalize()
+            return val
 
-        return val.capitalize()
+        return val
 
 
 class Innes(MSONable):
@@ -985,10 +992,23 @@ class Innes(MSONable):
         return TelnesTags(self.config_dict)
 
     def __str__(self):
-
-        output.extend(["%s = %s" % (k, str(v))
+        """
+        String representation of case.innes
+        :return: string
+        """
+        output = ['{:<60}'.format(self.comment),
+                  str(self.absorbing_atom),
+                  ' '.join([str(self.edge_n), str(self.edge_l)]),
+                  '{:.2f}'.format(self.e_onset),
+                  '{:.0f}'.format(self.e_beam),
+                  ' '.join(["{:.4f} {:.4f} {:.4f}".format(self.e_start, self.e_final, self.e_step)]),
+                  ' '.join(['{:.2f}'.format(self.collection_sa), '{:.2f}'.format(self.convergence_sa)]),
+                  ' '.join([str(self.qmesh_nr), str(self.qmesh_nt)]),
+                  '{:.2f}'.format(self.broadening)]
+        output.extend(["%s\n%s" % (k, TelnesTags._stringify_val(v))
                        for k, v in six.iteritems(self.config_dict)])
-        output.append("")
+
+        output.append("END")
         return "\n".join(output)
 
     def write_file(self, filename):
@@ -1039,3 +1059,66 @@ class Innes(MSONable):
 
         with zopen(filename, "rt") as f:
             return Innes.from_string(f.read())
+
+class Eels(MSONable):
+    """
+    Parse case.broadspec for EELS spectrum.
+    """
+
+    def __init__(self, data):
+        self.data = np.array(data)
+
+    @property
+    def energies(self):
+        """
+        Returns the spectrum energies in eV.
+        :return: spectrum energies
+        """
+
+        return self.data[:, 0]
+
+    @property
+    def total_spectrum(self):
+        """
+        Returns the total EELS spectrum
+        :return: total spectrum
+        """
+
+        return self.data[:, 1]
+
+    @property
+    def first_edge(self):
+        """
+        Returns the first edge of the EELS spectrum
+        :return: first edge
+        """
+
+        return self.data[:, 2]
+
+    @property
+    def second_edge(self):
+        """
+        Returns the second edge of the EELS spectrum
+        :return: second edge
+        """
+
+        return self.data[:, 3]
+
+    @staticmethod
+    def from_file(broadspec):
+        """
+        Load and parse a broadened EElS spectrum
+        :param broadspec: filename and path for case.broadspec
+        :return: Eels object
+        """
+        data = np.loadtxt(broadspec)
+        return Eels(data)
+
+    def as_dict(self):
+        """
+        Returns dict representation of Eels object
+        :return: dict representation
+        """
+        d = MSONable.as_dict(self)
+        d["data"] = self.data.tolist()
+        return d
