@@ -1,0 +1,16 @@
+Static:
+  command: "run_lapw -ec 0.0001 -cc 0.001 -it -p"
+Relax_initial:
+  command: "run_lapw -ec 0.25 -cc 0.1 -fc 20 -it -p -min"
+Relax_final:
+  command: "run_lapw -ec 0.0001 -cc 0.001 -fc 1 -it -p -min"
+spinpolarized:
+  command: "runsp_lapw -ec 0.0001 -cc 0.001 -it -p"
+QTL:
+  command: "x lapw2 -p -qtl"
+QTLso:
+  command: "x qtl -p"
+QTLTelnes:
+  command: "x qtl -p -telnes"
+Telnes:
+  command: "x telnes3"
