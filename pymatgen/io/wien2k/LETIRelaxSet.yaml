@@ -1,0 +1,16 @@
+Control:
+  Spinorbit: False
+  RUN_COMMAND: "run_lapw"
+In0:
+  Functional: XC_PBE
+In1:
+  RKMax: 7.0
+  Emax: 3.5
+In2:
+  switch: TOT
+  efmod: TETRA
+Inso:
+  Emax: 3.5
+Telnes:
+  E_beam: 200
+  E_max: 35.0
