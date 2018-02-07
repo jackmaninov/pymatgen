@@ -1054,7 +1054,7 @@ class Innes(MSONable):
         with zopen(filename, "rt") as f:
             return Innes.from_string(f.read())
 
-class Control(MSONable):
+class Control(dict, MSONable):
     """
     Class to create my wien2k.in shell script. Results in a bash-script to be executed
     by WIEN2KCMD
@@ -1066,6 +1066,8 @@ class Control(MSONable):
         :param params: Dict of input environment variables to set.
         """
         super(Control, self).__init__()
+        if params:
+            self.update(params)
 
     def __setitem__(self, key, value):
         """
@@ -1082,6 +1084,7 @@ class Control(MSONable):
         d = dict(self)
         d["@module"] = self.__class__.__module__
         d["@class"] = self.__class__.__name__
+        return d
 
     @classmethod
     def from_dict(cls, d):
@@ -1094,23 +1097,23 @@ class Control(MSONable):
         pretty printing
         :param sort_keys: (bool) set to True to sort the parameters alphabetically. Defaults
             to False
-        :param pretty: Set to Tru for pretty aligned output. Defaults to False.
+        :param pretty: Set to True for pretty aligned output. Defaults to False.
         :return: string representation
         """
         keys = self.keys()
         if sort_keys:
             keys = sorted(keys)
+
         lines = []
         for k in keys:
-            lines.append(f'EXPORT {k}={self[k]}')
+            lines.append(f'export {k}="{self[k]}"')
 
-        lines.append(f'$command')
+        lines.append(f'eval {self["COMMAND"]}') #execute the command last
 
         if pretty:
-            return str(tabulate([[l[0], "=", l[1]] for l in lines],
-                                tablefmt="plain"))
+            return str(tabulate([[l.split('=')[0], "=", l.split('=')[-1]] for l in lines[0:-1]], tablefmt = "plain"))
         else:
-            return str_delimited(lines, None, " = ") + "\n"
+            return "\n".join(lines)
 
     def __str__(self):
         return self.get_string(sort_keys=True, pretty=False)
@@ -1120,7 +1123,7 @@ class Control(MSONable):
         Write Control to a file.
         :param filename: (str) filename to write to.
         """
-        with zopen(filename, "wt") as f:
+        with zopen(filename, "w", newline='\n') as f:  #Write in binary to force UNIX CR
             f.write(self.__str__())
 
     @staticmethod
@@ -1143,7 +1146,7 @@ class Control(MSONable):
         lines = list(clean_lines(string.splitlines()))
         params = {}
         for line in lines:
-            m = re.match(r'EXPORT (\w+)\s*=\s*(.*)', line)
+            m = re.match(r'export (\w+)\s*=\s*(.*)', line)
             if m:
                 key = m.group(1).strip()
                 val = m.group(2).strip()
