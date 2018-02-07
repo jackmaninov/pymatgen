@@ -286,3 +286,77 @@ class OutputNMR(MSONable):
         :param filename: case.outputnmr to parse
         """
         warnings.warn('TODO: WIEN2k NMR parsing not implemented')
+
+
+class Eels(MSONable):
+    """
+    Parse case.broadspec for EELS spectrum.
+    """
+
+    def __init__(self, data, filename):
+        self.data = np.array(data)
+        self.filename = filename
+
+    @property
+    def energies(self):
+        """
+        Returns the spectrum energies in eV.
+        :return: spectrum energies
+        """
+
+        return self.data[:, 0]
+
+    @property
+    def total_spectrum(self):
+        """
+        Returns the total EELS spectrum
+        :return: total spectrum
+        """
+
+        return self.data[:, 1]
+
+    @property
+    def first_edge(self):
+        """
+        Returns the first edge of the EELS spectrum
+        :return: first edge
+        """
+
+        if len(self.data[0])>2:
+            print("Moo")
+            return self.data[:, 2]
+        else:
+            warnings.warn("No first edge in " + self.filename)
+
+    @property
+    def second_edge(self):
+        """
+        Returns the second edge of the EELS spectrum
+        :return: second edge
+        """
+
+        if len(self.data[0])>3:
+            return self.data[:, 3]
+        else:
+            warnings.warn("No second edge in " + self.filename)
+            return None
+
+
+    @staticmethod
+    def from_file(spectrum):
+        """
+        Load and parse a broadened/unbroadened EELS spectrum
+        :param spectrum: filename and path for case.broadspec
+        :return: Eels object
+        """
+        data = np.loadtxt(spectrum)
+        return Eels(data, spectrum)
+
+    def as_dict(self):
+        """
+        Returns dict representation of Eels object
+        :return: dict representation
+        """
+        d = MSONable.as_dict(self)
+        d["data"] = self.data.tolist()
+        return d
