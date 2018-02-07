@@ -1597,7 +1597,7 @@ class IStructure(SiteCollection, MSONable):
         Reads a structure from a file. For example, anything ending in
         a "cif" is assumed to be a Crystallographic Information Format file.
         Supported formats include CIF, POSCAR/CONTCAR, CHGCAR, LOCPOT,
-        vasprun.xml, CSSR, Netcdf and pymatgen's JSON serialized structures.
+        vasprun.xml, CSSR, Netcdf, struct and pymatgen's JSON serialized structures.
 
         Args:
             filename (str): The filename to read from.
@@ -1622,6 +1622,7 @@ class IStructure(SiteCollection, MSONable):
         from pymatgen.io.lmto import LMTOCtrl
         from pymatgen.io.vasp import Vasprun, Chgcar
         from pymatgen.io.exciting import ExcitingInput
+        from pymatgen.io.wien2k import Struct
         from monty.io import zopen
         fname = os.path.basename(filename)
         with zopen(filename, "rt") as f:
@@ -1639,6 +1640,8 @@ class IStructure(SiteCollection, MSONable):
             s = Chgcar.from_file(filename).structure
         elif fnmatch(fname, "vasprun*.xml*"):
             s = Vasprun(filename).final_structure
+        elif fnmatch(fname, "*.struct*"):
+            s = Struct.from_file(filename).structure
         elif fnmatch(fname.lower(), "*.cssr*"):
             return cls.from_str(contents, fmt="cssr",
                                 primitive=primitive, sort=sort,
