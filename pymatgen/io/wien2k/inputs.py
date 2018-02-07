@@ -13,10 +13,6 @@ import math
 
 import six
 from six import string_types
-import numpy as np
-from numpy.linalg import det
-from collections import OrderedDict, namedtuple
-from hashlib import md5
 import fortranformat as ff
 from copy import deepcopy
 
@@ -29,11 +25,9 @@ from tabulate import tabulate
 
 import scipy.constants as const
 
-from pymatgen import SETTINGS
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.structure import Structure
-from pymatgen.core.periodic_table import Element, get_el_sp
-from monty.design_patterns import cached_class
+from pymatgen.core.periodic_table import Element
 from pymatgen.util.string import str_delimited
 from pymatgen.util.io_utils import clean_lines
 from monty.json import MSONable
@@ -366,7 +360,7 @@ class KListSupportedModes(Enum):
         raise ValueError("Can't interprete Kpoint mode %s" % s)
 
 
-class KList(MSONable):
+class Kpoints(MSONable):
     """
     case.klist reader/writer
     """
@@ -378,7 +372,7 @@ class KList(MSONable):
                  kpts_weights=None, coord_type=None, labels=None,
                  tet_number=0, tet_weight=0):
         """
-        WIEN2k Kpoint class constructor.
+        WIEN2k Kpoint class constructor. Note that the file should be saved as case.klist!
 
         Args:
             comment (str): String comment for Kpoints
@@ -421,11 +415,11 @@ class KList(MSONable):
     @style.setter
     def style(self, style):
         if isinstance(style, six.string_types):
-            style = KList.supported_modes.from_string(style)
+            style = Kpoints.supported_modes.from_string(style)
 
-        if style in (KList.supported_modes.Automatic,
-                     KList.supported_modes.Gamma,
-                     KList.supported_modes.Monkhorst) and len(self.kpts) > 1:
+        if style in (Kpoints.supported_modes.Automatic,
+                     Kpoints.supported_modes.Gamma,
+                     Kpoints.supported_modes.Monkhorst) and len(self.kpts) > 1:
             raise ValueError("For fully automatic or automatic gamma or monk "
                              "kpoints, only a single line for the number of "
                              "divisions is allowed.")
@@ -447,9 +441,9 @@ class KList(MSONable):
         Returns:
             Kpoints object
         """
-        return KList("Fully automatic kpoint scheme", 0,
-                     style=KList.supported_modes.Automatic,
-                     kpts=[[subdivisions]])
+        return Kpoints("Fully automatic kpoint scheme", 0,
+                       style=Kpoints.supported_modes.Automatic,
+                       kpts=[[subdivisions]])
 
     @staticmethod
     def gamma_automatic(kpts=(1, 1, 1), shift=(0, 0, 0)):
@@ -465,9 +459,9 @@ class KList(MSONable):
         Returns:
             Kpoints object
         """
-        return KList("Automatic kpoint scheme", 0,
-                     KList.supported_modes.Gamma, kpts=[kpts],
-                     kpts_shift=shift)
+        return Kpoints("Automatic kpoint scheme", 0,
+                       Kpoints.supported_modes.Gamma, kpts=[kpts],
+                       kpts_shift=shift)
 
     @staticmethod
     def monkhorst_automatic(kpts=(2, 2, 2), shift=(0, 0, 0)):
@@ -483,9 +477,9 @@ class KList(MSONable):
         Returns:
             Kpoints object
         """
-        return KList("Automatic kpoint scheme", 0,
-                     KList.supported_modes.Monkhorst, kpts=[kpts],
-                     kpts_shift=shift)
+        return Kpoints("Automatic kpoint scheme", 0,
+                       Kpoints.supported_modes.Monkhorst, kpts=[kpts],
+                       kpts_shift=shift)
 
     @staticmethod
     def monkhorst_automatic(kpts=(2, 2, 2), shift=(0, 0, 0)):
@@ -501,9 +495,9 @@ class KList(MSONable):
         Returns:
             Kpoints object
         """
-        return KList("Automatic kpoint scheme", 0,
-                     KList.supported_modes.Monkhorst, kpts=[kpts],
-                     kpts_shift=shift)
+        return Kpoints("Automatic kpoint scheme", 0,
+                       Kpoints.supported_modes.Monkhorst, kpts=[kpts],
+                       kpts_shift=shift)
 
     @staticmethod
     def automatic_density(structure, kppa, force_gamma=False):
@@ -523,7 +517,7 @@ class KList(MSONable):
                 use gamma only for hexagonal cells or odd meshes)
 
         Returns:
-            KList
+            Kpoints
         """
         comment = "pymatgen 4.7.6+ generated KPOINTS with grid density = " + \
                   "%.0f / atom" % kppa
@@ -540,11 +534,11 @@ class KList(MSONable):
 
         has_odd = any([i % 2 == 1 for i in num_div])
         if has_odd or is_hexagonal or force_gamma:
-            style = KList.supported_modes.Gamma
+            style = Kpoints.supported_modes.Gamma
         else:
-            style = KList.supported_modes.Monkhorst
+            style = Kpoints.supported_modes.Monkhorst
 
-        return KList(comment, 0, style, [num_div], [0, 0, 0])
+        return Kpoints(comment, 0, style, [num_div], [0, 0, 0])
 
     @staticmethod
     def automatic_density_by_vol(structure, kppvol, force_gamma=False):
@@ -561,12 +555,12 @@ class KList(MSONable):
             force_gamma (bool): Force a gamma centered mesh
 
         Returns:
-            KList
+            Kpoints
         """
         vol = structure.lattice.reciprocal_lattice.volume
         kppa = kppvol * vol * structure.num_sites
-        return KList.automatic_density(structure, kppa,
-                                       force_gamma=force_gamma)
+        return Kpoints.automatic_density(structure, kppa,
+                                         force_gamma=force_gamma)
 
     @staticmethod
     def from_file(filename):
@@ -580,7 +574,7 @@ class KList(MSONable):
             Kpoints object
         """
         with zopen(filename, "rt") as f:
-            return KList.from_string(f.read())
+            return Kpoints.from_string(f.read())
 
     @staticmethod
     def from_string(string):
@@ -609,7 +603,7 @@ class KList(MSONable):
                     [kpt, k_x, k_y, k_z, k_weight, i_div, junk1, junk2, num_kpts0, n_divx, n_divy,
                      ndivz] = reader1.read(
                         line)
-                    style = KList.supported_modes.Gamma if k_x == k_y == k_z == 0 else KList.supported_modes.Monkhorst
+                    style = Kpoints.supported_modes.Gamma if k_x == k_y == k_z == 0 else Kpoints.supported_modes.Monkhorst
                 except ValueError:
                     raise ValueError('Error reading first k-point', line)
             else:
@@ -621,8 +615,8 @@ class KList(MSONable):
             kpts.append([float(k_x / i_div), float(k_y / i_div), float(k_z / i_div)])
             kpts_weights.append(float(k_weight))
 
-        return KList.gamma_automatic(kpts) if style == KList.supported_modes.Gamma \
-            else KList.monkhorst_automatic(kpts)
+        return Kpoints.gamma_automatic(kpts) if style == Kpoints.supported_modes.Gamma \
+            else Kpoints.monkhorst_automatic(kpts)
 
 
 # class In0(MSONable):
@@ -720,7 +714,7 @@ class WIEN2kInput(dict, MSONable):
                              (case + ".in1", In1), (case + ".in2", In2),
                              (case + ".inc", Inc), (case + ".inm", Inm),
                              (case + ".inso", Inso), (case + ".inst", Inst),
-                             (case + ".kgen", Kgen), (case + ".klist", KList)]:
+                             (case + ".kgen", Kgen), (case + ".klist", Kpoints)]:
             fullzpath = zpath(os.path.join(input_dir, fname))
             sub_d[fname.lower()] = ftype.from_file(fullzpath)
         sub_d["optional_files"] = {}
@@ -1060,65 +1054,204 @@ class Innes(MSONable):
         with zopen(filename, "rt") as f:
             return Innes.from_string(f.read())
 
-class Eels(MSONable):
+class Control(MSONable):
     """
-    Parse case.broadspec for EELS spectrum.
+    Class to create my wien2k.in shell script. Results in a bash-script to be executed
+    by WIEN2KCMD
     """
 
-    def __init__(self, data):
-        self.data = np.array(data)
+    def __init__(self, params=None):
+        """
+        Creates a control object
+        :param params: Dict of input environment variables to set.
+        """
+        super(Control, self).__init__()
 
-    @property
-    def energies(self):
+    def __setitem__(self, key, value):
         """
-        Returns the spectrum energies in eV.
-        :return: spectrum energies
+        Add parameter-val pair to Control. Cleans the parameter and val by stripping
+        leading and trailing white space.
+        :param key: key to set
+        :param value: value to assign to key
         """
-
-        return self.data[:, 0]
-
-    @property
-    def total_spectrum(self):
-        """
-        Returns the total EELS spectrum
-        :return: total spectrum
-        """
-
-        return self.data[:, 1]
-
-    @property
-    def first_edge(self):
-        """
-        Returns the first edge of the EELS spectrum
-        :return: first edge
-        """
-
-        return self.data[:, 2]
-
-    @property
-    def second_edge(self):
-        """
-        Returns the second edge of the EELS spectrum
-        :return: second edge
-        """
-
-        return self.data[:, 3]
-
-    @staticmethod
-    def from_file(broadspec):
-        """
-        Load and parse a broadened EElS spectrum
-        :param broadspec: filename and path for case.broadspec
-        :return: Eels object
-        """
-        data = np.loadtxt(broadspec)
-        return Eels(data)
+        super(Control, self).__setitem__(
+            key.strip(), Control.proc_val(key.strip(), val.strip())
+            if isinstance(val, six.string_types) else val)
 
     def as_dict(self):
+        d = dict(self)
+        d["@module"] = self.__class__.__module__
+        d["@class"] = self.__class__.__name__
+
+    @classmethod
+    def from_dict(cls, d):
+        return Control({k: v for k, v in d.items() if k not in ("@module",
+                                                                "@class")})
+
+    def get_string(self, sort_keys=False, pretty=False):
         """
-        Returns dict representation of Eels object
-        :return: dict representation
+        Returns a string representation of the Control file. Provides options for
+        pretty printing
+        :param sort_keys: (bool) set to True to sort the parameters alphabetically. Defaults
+            to False
+        :param pretty: Set to Tru for pretty aligned output. Defaults to False.
+        :return: string representation
         """
-        d = MSONable.as_dict(self)
-        d["data"] = self.data.tolist()
-        return d
+        keys = self.keys()
+        if sort_keys:
+            keys = sorted(keys)
+        lines = []
+        for k in keys:
+            lines.append(f'EXPORT {k}={self[k]}')
+
+        lines.append(f'$command')
+
+        if pretty:
+            return str(tabulate([[l[0], "=", l[1]] for l in lines],
+                                tablefmt="plain"))
+        else:
+            return str_delimited(lines, None, " = ") + "\n"
+
+    def __str__(self):
+        return self.get_string(sort_keys=True, pretty=False)
+
+    def write_file(self, filename):
+        """
+        Write Control to a file.
+        :param filename: (str) filename to write to.
+        """
+        with zopen(filename, "wt") as f:
+            f.write(self.__str__())
+
+    @staticmethod
+    def from_file(filename):
+        """
+        Reads a Control object from a file
+        :param filename: (str) filename of the file to be read
+        :return: Incar object
+        """
+        with zopen(filename, "rt") as f:
+            return Control.from_string(f.read())
+
+    @staticmethod
+    def from_string(string):
+        """
+        Reads a Control object from a string. Does not import the final execution command.
+        :param string: (str) to read
+        :return: Control object
+        """
+        lines = list(clean_lines(string.splitlines()))
+        params = {}
+        for line in lines:
+            m = re.match(r'EXPORT (\w+)\s*=\s*(.*)', line)
+            if m:
+                key = m.group(1).strip()
+                val = m.group(2).strip()
+                val = Control.proc_val(key,val)
+                params[key] = val
+        return Control(params)
+
+    @staticmethod
+    def proc_val(key, val):
+        """
+        Static helper method to convert Control parameters to proper types, e.g.,
+        integers, floats, lists, etc.
+        :param key: Control parameter key
+        :param val: Actual value of Control parameter
+        :return:
+        """
+        float_keys = ("EC", "CC", )
+        int_keys = ("FC")
+
+        def smart_int_or_float(numstr):
+            if numstr.find(".") != -1 or numstr.lower().find("e") != -1:
+                return float(numstr)
+            else:
+                return int(numstr)
+
+        try:
+            if key in float_keys:
+                return float(re.search(r"^-?\d*\.?\d*[e|E]?-?\d*", val).group(0))
+
+            if key in int_keys:
+                return int(re.match(r"^-?[0-9]+", val).group(0))
+
+        except ValueError:
+            pass
+
+        # Not in standard keys. We will try a hierarchy of conversions.
+        try:
+            val = int(val)
+            return val
+        except ValueError:
+            pass
+
+        try:
+            val = float(val)
+            return val
+        except ValueError:
+            pass
+
+        if "true" in val.lower():
+            return True
+
+        if "false" in val.lower():
+            return False
+
+        return val.strip().capitalize()
+
+    def diff(self, other):
+        """
+        Diff function for Control. Compares two Controls and indicates which
+        parameters are the same and which are not. Useful for checking whether
+        two runs were done using the same parameters.
+        :param other: Other Control object to compare to.
+        :return: Dict of the following format:
+            {"Same" : parameters_that_are_the_same,
+            "Different": parameters_that_are_different}
+            Note that the parameters are return as full dictionaries of values.
+            E.g. {"ISIF":3}
+        """
+        similar_param = {}
+        different_param = {}
+        for k1, v1 in self.items():
+            if k1 not in other:
+                different_param[k1] = {"CONTROL1": v1, "CONTROL2": None}
+            elif v1 != other[k1]:
+                different_param[k1] = {"CONTROL1": v1, "CONTROL2": other[k1]}
+            else:
+                similar_param[k1] = v1
+        for k2, v2 in other.items():
+            if k2 not in similar_param and k2 not in different_param:
+                if k2 not in self:
+                    different_param[k2] = {"CONTROL1": None, "CONTROL2": v2}
+        return {"Same": similar_param, "Different": different_param}
+
+    def __add__(self, other):
+        """
+        Add all the values of another Control object to this object.
+        Facilitates the use of "standard" Control.
+        """
+        params = {k: v for k, v in self.items()}
+        for k, v in other.items():
+            if k in self and v != self[k]:
+                raise ValueError("Controls have conflicting values!")
+            else:
+                params[k] = v
+        return Control(params)
+
+class In0(MSONable):
+    """
+    Case.in0 class
+    """
+    pass
+
+class In1(MSONable):
+    """
+    Case.in1 class
+    """
+
+class In2(MSONable):
+    """
+    Case.in2 class
+    """
