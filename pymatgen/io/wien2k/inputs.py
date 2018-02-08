@@ -282,6 +282,18 @@ class Struct(MSONable):
         return Struct(struct, comment=comment, relativistic=relativistic, symops=symops,
                       lattice=lattice)
 
+    def __repr__(self):
+        """
+        :return: String representation of Struct file
+        """
+        return self.get_string()
+
+    def __str__(self):
+        """
+        :return: String representation of Struct file
+        """
+        return self.get_string()
+
     def get_string(self):
         """
 
@@ -339,6 +351,14 @@ class Struct(MSONable):
             lines.append(writer15.write([i]))
 
         return "\n".join(lines)
+
+    def write_file(self, filename):
+        """
+        Write Struct to a file.
+        :param filename:  filename to write Struct to
+        """
+        with zopen(filename, "wt", newline="\n") as f:
+            f.write(self.get_string())
 
 
 class KListSupportedModes(Enum):
