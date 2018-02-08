@@ -1089,7 +1089,7 @@ class Control(dict, MSONable):
         if params:
             self.update(params)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, val):
         """
         Add parameter-val pair to Control. Cleans the parameter and val by stripping
         leading and trailing white space.
