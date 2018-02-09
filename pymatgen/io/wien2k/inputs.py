@@ -146,9 +146,13 @@ class Struct(MSONable):
         except ValueError:
             raise ValueError("Error reading unit cell parameters")
 
+        a *= BOHR
+        b *= BOHR
+        c *= BOHR
+
         # construct lattice
         if structtype is lattype['P']:  # primative (not hexagonal)
-            lattice = Lattice.from_parameters(a * BOHR, b * BOHR, c * BOHR,
+            lattice = Lattice.from_parameters(a, b, c,
                                               alpha, beta, gamma)
         elif structtype is lattype['F']:  # face-centered
             lattice = Lattice([[a / 2, b / 2, 0],
@@ -311,7 +315,7 @@ class Struct(MSONable):
 
         # line 4
         writer4 = ff.FortranRecordWriter('(6F10.6)')
-        lines.append(writer4.write(list(x * BOHR for x in latt.abc) + list(latt.angles)))
+        lines.append(writer4.write(list(x / BOHR for x in latt.abc) + list(latt.angles)))
 
         # line 5 - 7
         writer5 = ff.FortranRecordWriter('(A4,I4,A4,F10.8,A3,F10.8,A3,F10.8)')
