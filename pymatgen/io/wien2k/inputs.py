@@ -39,6 +39,7 @@ on case.struct, case.inc, case.inm, case.inso, case.int, case.inorb, case.klist
 
 logger = logging.getLogger(__name__)
 
+BOHR = const.physical_constants['atomic unit of length'][0] * 10 ** 10
 
 class Struct(MSONable):
     """
@@ -145,14 +146,10 @@ class Struct(MSONable):
         except ValueError:
             raise ValueError("Error reading unit cell parameters")
 
-        # convert bohrs to angstroms
-        bohr = const.physical_constants['atomic unit of length'][0] * 10 ** 10
-        a *= bohr
-        b *= bohr
-        c *= bohr
         # construct lattice
         if structtype is lattype['P']:  # primative (not hexagonal)
-            lattice = Lattice.from_parameters(a, b, c, alpha, beta, gamma)
+            lattice = Lattice.from_parameters(a * BOHR, b * BOHR, c * BOHR,
+                                              alpha, beta, gamma)
         elif structtype is lattype['F']:  # face-centered
             lattice = Lattice([[a / 2, b / 2, 0],
                                [a / 2, 0, c / 2],
@@ -314,7 +311,7 @@ class Struct(MSONable):
 
         # line 4
         writer4 = ff.FortranRecordWriter('(6F10.6)')
-        lines.append(writer4.write(list(latt.abc) + list(latt.angles)))
+        lines.append(writer4.write(list(x * BOHR for x in latt.abc) + list(latt.angles)))
 
         # line 5 - 7
         writer5 = ff.FortranRecordWriter('(A4,I4,A4,F10.8,A3,F10.8,A3,F10.8)')
@@ -344,8 +341,9 @@ class Struct(MSONable):
         writer12 = ff.FortranRecordWriter('(3I2,F10.7)')
         writer15 = ff.FortranRecordWriter('(I8)')
 
-        lines.append(writer11.write([len(self.symops), 'NUMBER OF SYMMETRY OPERATIONS'.rjust(35)]))
-        for (i, symop) in enumerate(self.symops):
+
+        lines.append(writer11.write([len(self.symops) if self.symops else 0, 'NUMBER OF SYMMETRY OPERATIONS'.rjust(35)]))
+        for (i, symop) in enumerate(self.symops or []):
             for line in symop:
                 lines.append(writer12.write(line))
             lines.append(writer15.write([i]))
@@ -1183,8 +1181,8 @@ class Control(dict, MSONable):
         :param val: Actual value of Control parameter
         :return:
         """
-        float_keys = ("EC", "CC", )
-        int_keys = ("FC")
+        float_keys = ("WIENEC", "WIENCC", )
+        int_keys = ("WIENFC")
 
         def smart_int_or_float(numstr):
             if numstr.find(".") != -1 or numstr.lower().find("e") != -1:
@@ -1221,7 +1219,7 @@ class Control(dict, MSONable):
         if "false" in val.lower():
             return False
 
-        return val.strip().capitalize()
+        return val.strip()
 
     def diff(self, other):
         """
