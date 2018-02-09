@@ -146,6 +146,7 @@ class Struct(MSONable):
         except ValueError:
             raise ValueError("Error reading unit cell parameters")
 
+        # Convert bohr to Angstrom
         a *= BOHR
         b *= BOHR
         c *= BOHR
