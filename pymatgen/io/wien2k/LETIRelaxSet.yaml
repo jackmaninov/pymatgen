@@ -1,6 +1,15 @@
 Control:
-  Spinorbit: False
   RUN_COMMAND: "run_lapw"
+  WIENEC: 0.25
+  WIENCC: 0.1
+  WIENFC: 20
+Control_relax:
+  COMMAND: "$BASE_COMMAND -ec $WIENEC -cc $WIENCC -fc $WIENFC -$WIENIT $WIENP -min"
+  BASE_COMMAND: "run_lapw"
+  SP_COMMAND: "runsp_lapw"
+  WIENEC: 0.0001
+  WIENCC: 0.001
+  WIENFC: 1
 In0:
   Functional: XC_PBE
 In1:

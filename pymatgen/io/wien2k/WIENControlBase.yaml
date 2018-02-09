@@ -1,34 +1,15 @@
-Control:
-  COMMAND: "$RUN_COMMAND -ec $WIENEC -cc $WIENCC -it -p"
-  BASE_COMMAND: "run_lapw"
-  SP_COMMAND: "runsp_lapw"
-  WIENEC: 0.0001
-  WIENCC: 0.001
-Static:
-  COMMAND: "$RUN_COMMAND -ec $WIENEC -cc $WIENCC -it -p"
-  BASE_COMMAND: "run_lapw"
-  SP_COMMAND: "runsp_lapw"
-  WIENEC: 0.0001
-  WIENCC: 0.001
-Relax_initial:
-  COMMAND: "$RUN_COMMAND -ec $WIENEC -cc $WIENCC -fc $WIENFC -it -p -min"
-  BASE_COMMAND: "run_lapw"
-  SP_COMMAND: "runsp_lapw"
-  WIENEC: 0.25
-  WIENCC: 0.1
-  WIENFC: 20
-Relax_final:
-  COMMAND: "$BASE_COMMAND -ec $WIENEC -cc $WIENCC -fc $WIENFC -it -p -min"
-  BASE_COMMAND: "run_lapw"
-  SP_COMMAND: "runsp_lapw"
-  WIENEC: 0.0001
-  WIENCC: 0.001
-  WIENFC: 1
-QTL:
-  COMMAND: "x lapw2 -p -qtl"
-QTLso:
-  COMMAND: "x qtl -p"
-QTLTelnes:
-  COMMAND: "x qtl -p -telnes"
-Telnes:
-  COMMAND: "x telnes3"
+COMMAND: "$RUN_COMMAND -ec $WIENEC -cc $WIENCC -fc $WIENFC $WIENIT $WIENP"
+BASE_COMMAND: "run_lapw"
+RUN_COMMAND: "run_lapw"
+SP_COMMAND: "runsp_lapw"
+QTL: "x lapw2 -p -qtl"
+QTLso: "x qtl -p"
+QTLTelnes: "x qtl -p -telnes"
+Telnes: "x telnes3"
+WIENEC: 0.0001
+WIENCC: 0.001
+WEINFC: 1
+WIENP: -p
+WIENIT: -it
+
+
