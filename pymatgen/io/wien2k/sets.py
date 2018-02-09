@@ -29,13 +29,11 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.sites import PeriodicSite
 
 """
-This module defines the VaspInputSet abstract base class and a concrete
-implementation for the parameters developed and tested by the core team
-of pymatgen, including the Materials Virtual Lab, Materials Project and the MIT
-high throughput project.  The basic concept behind an input set is to specify
-a scheme to generate a consistent set of VASP inputs from a structure
-without further user intervention. This ensures comparability across
-runs.
+This module defines the Wien2kInputSet abstract base class concrete
+implementations for the parameters to use in calculations.  The basic 
+concept behind an input set is to specify a scheme to generate a consistent 
+set of WIEN2k inputs from a structure without further user intervention. 
+This ensures comparability across runs.
 
 Read the following carefully before implementing new input sets:
 
@@ -128,16 +126,15 @@ class Wien2kInputSet(six.with_metaclass(abc.ABCMeta, MSONable)):
         Returns all input files as a dict of {filename: wien2k object}
         """
 
-        kpoints=self.kpoints
-        control=self.control
+        #case = self.case
 
-        return {'wien2k.in': control,
-                'pymatgen.struct': self.struct,
-                'pymatgen.klist': self.kpoints,
-                'pymatgen.in0': self.in0,
-                'pymatgen.in1': self.in1,
-                'pymatgen.in2': self.in2,
-                'pymatgen.innes': self.innes}
+        return {'control': self.control,
+                'struct': self.struct,
+                'klist': self.kpoints,
+                'in0': self.in0,
+                'in1': self.in1,
+                'in2': self.in2,
+                'innes': self.innes}
 
     def write_input(self, output_dir,
                     make_dir_if_not_present=True, include_cif=False):
@@ -152,12 +149,19 @@ class Wien2kInputSet(six.with_metaclass(abc.ABCMeta, MSONable)):
         :return:
         """
 
+        # we MUST write to a directory with the case name
+        #if os.path.basename(os.path.normpath(output_dir)) != self.case:
+        #    output_dir = os.path.join(output_dir, self.case)
+        #    warnings.warn(f"Output directory MUST match case. Writing to {output_dir}")
+
+        case = os.path.basename(os.path.normpath(output_dir)) # files must match dir name
+
         if make_dir_if_not_present and not os.path.exists(output_dir):
             os.makedirs(output_dir)
         for k, v in self.all_input.items():
-            v.write_file(os.path.join(output_dir,k))
+            v.write_file(os.path.join(output_dir, f"{case}.{k}"))
         if include_cif:
-            s = self.all_input["case.struct"].structure
+            s = self.all_input['struct'].structure
             fname = os.path.join(output_dir, "%s.cif" % re.sub(r'\s', "",
                                                                s.formula))
             s.to(filename=fname)
@@ -225,6 +229,7 @@ class DictSet(Wien2kInputSet):
             structure = structure.get_sorted_structure()
         self.structure = structure
         self._config_dict = deepcopy(config_dict)
+        self.case = case
         self.files_to_transfer = files_to_transfer or {}
         self.sort_structure = sort_structure
         self.functional = functional #TODO roll this into an override?
@@ -240,17 +245,29 @@ class DictSet(Wien2kInputSet):
 
     @property
     def control(self):
-        settings = dict(self._config_dict["wien2k.in"])
-        setttings.update(self.user_control_settings)
+        settings = dict(self._config_dict["Control"])
+        settings.update(self.user_control_settings)
         structure = self.structure
         control = Control() #TODO implement in inputs.py
         comp = structure.composition
-        elements = sorted([el for el in comp.elements if comp[el] > 0], key=lambda e: e.X)
+        """
+        elements = sorted([el for el in comp.elements if comp[el] > 0],
+                          key=lambda e: e.X)
         most_electroneg = elements[-1].symbol
         struct = Struct(structure)
         hubbard_u = settings.get("LDAU", False)
+        """
 
-        #TODO write out wien2k.in based on some settings (e.g. what command to run)
+        for k, v in settings.items():
+            """
+            TODO add structure-dependant control settings here
+            e.g. VASP DictSet sets LDAU parameters, so I could turn on -orb and
+            set up Indm/Inorb objects. MPRelax set also sets the E convergence
+            per atom"""
+            control[k] = v
+
+
+        return control
 
     @property
     def struct(self):
@@ -266,6 +283,19 @@ class DictSet(Wien2kInputSet):
             sum([self.structure.composition.element_composition[ps.element]
                  * ps.ZVAL
                  for ps in self.struct])))
+
+    @property
+    def in0(self):
+        pass
+
+    def in1(self):
+        pass
+
+    def in2(self):
+        pass
+
+    def innes(self):
+        pass
 
     @property
     def kpoints(self):
@@ -297,12 +327,18 @@ class DictSet(Wien2kInputSet):
 
 class LETIRelaxSet(DictSet):
     """
-    TODO implement a set of default WIEN2k settings for my project. Should consist of things like:
+    TODO implement a set of default WIEN2k settings for my project. Should consist of
+    things like:
     RKMAX
     Functional
     executing commands
     """
-    CONFIG =  _load_yaml_config("LETIRelaxSet")
+    CONFIG = _load_yaml_config("LETIRelaxSet")
+
+    def __init__(self, structure, **kwargs):
+        super(LETIRelaxSet, self).__init__(
+            structure, LETIRelaxSet.CONFIG, **kwargs)
+        self.kwargs = kwargs
 
 class LETIStaticSet(DictSet):
     """
