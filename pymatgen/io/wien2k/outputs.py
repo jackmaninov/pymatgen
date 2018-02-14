@@ -56,7 +56,7 @@ def _wien2krun_float(f):
     except ValueError as e:
         f = f.strip()
         if f == '*' * len(f):
-            warnings.warn('Float overflow (*******) encountered in vasprun')
+            warnings.warn('Float overflow (*******) encountered in WIEN2krun')
             return np.nan
         raise e
 
@@ -172,6 +172,7 @@ class Scffile(MSONable):
         magnetization = []
         charge = []
         chargeline = {}
+        gap = None
 
         for line in reverse_readfile(self.filename):
             clean = line.strip()
@@ -200,6 +201,9 @@ class Scffile(MSONable):
             if clean.find(":MMI") != -1:
                 tok = clean.split()
                 magnetization.append(float(tok[-1]))
+            if clean.find(":GAP") != -1:
+                tok = clean.split()
+                gap = float(tok[6])
             if clean.find(":CTO") != -1:
                 tok = clean.split()
                 if spin:
@@ -227,6 +231,7 @@ class Scffile(MSONable):
         self.total_mag = total_mag
         self.last_iteration = last_iteration
         self.data = {}
+        self.gap = gap
 
         """
         TODO other items read in pymatgen.io.vasp.outputs.py.Outcar can be extracted
