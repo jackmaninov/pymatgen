@@ -1,15 +1,25 @@
+INIT: "init_lapw -b -red $WIEN_RED -vxc $WIENVXC -ecut $WIEN_ECUT -rkmax $WIEN_RKMAX -lvns $WIEN_LVNS $WIEN_IN2 -mix $WIEN_MIX -numk $WIEN_KPOINTS"
+WIEN_RED: 0
+WIEN_VXC: 13
+WIEN_ECUT: -6.0
+WIEN_RKMAX: 7.0
+WIEN_LVNS: 4
+WIEN_IN2: ""
+WIEN_MIX: 0.2
+WIEN_KPOINTS: 100
+DEPLOY: "echo Deploy any changed inputs here"
 COMMAND: "$RUN_COMMAND -ec $WIENEC -cc $WIENCC -fc $WIENFC $WIENIT $WIENP"
-BASE_COMMAND: "run_lapw"
 RUN_COMMAND: "run_lapw"
+BASE_COMMAND: "run_lapw"
 SP_COMMAND: "runsp_lapw"
 QTL: "x lapw2 -p -qtl"
 QTLso: "x qtl -p"
 QTLTelnes: "x qtl -p -telnes"
 Telnes: "x telnes3"
-WIENEC: 0.0001
-WIENCC: 0.001
-WEINFC: 1
-WIENP: -p
-WIENIT: -it
+WIEN_EC: 0.0001
+WIEN_CC: 0.001
+WIEN_FC: 1
+WIEN_P: -p
+WIEN_IT: ""
 
 

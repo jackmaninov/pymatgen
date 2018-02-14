@@ -1,15 +1,16 @@
 Control:
   RUN_COMMAND: "run_lapw"
-  WIENEC: 0.25
-  WIENCC: 0.1
-  WIENFC: 20
+  WIEN_EC: 0.25
+  WIEN_CC: 0.1
+  WIEN_FC: 20
 Control_relax:
-  COMMAND: "$BASE_COMMAND -ec $WIENEC -cc $WIENCC -fc $WIENFC -$WIENIT $WIENP -min"
+  COMMAND: "$RUN_COMMAND -ec $WIEN_EC -cc $WIEN_CC -fc $WIEN_FC -$WIEN_IT $WIEN_P -min"
+  RUN_COMMAND: "run_lapw"
   BASE_COMMAND: "run_lapw"
   SP_COMMAND: "runsp_lapw"
-  WIENEC: 0.0001
-  WIENCC: 0.001
-  WIENFC: 1
+  WIEN_EC: 0.0001
+  WIEN_CC: 0.001
+  WIEN_FC: 1
 In0:
   Functional: XC_PBE
 In1:
@@ -18,8 +19,10 @@ In1:
 In2:
   switch: TOT
   efmod: TETRA
+KList:
+  reciprocal_density: 64
 Inso:
   Emax: 3.5
-Telnes:
-  E_beam: 200
-  E_max: 35.0
+Innes:
+  e_beam: 200
+  e_final: 35.0
