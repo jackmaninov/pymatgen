@@ -130,11 +130,12 @@ class Wien2kInputSet(six.with_metaclass(abc.ABCMeta, MSONable)):
 
         return {'control': self.control,
                 'struct': self.struct,
-                'klist': self.kpoints,
+                'innes': self.innes,
+                'klist_pymatgen': self.kpoints,
                 'in0': self.in0,
                 'in1': self.in1,
-                'in2': self.in2,
-                'innes': self.innes}
+                'in2': self.in2}
+
 
     def write_input(self, output_dir,
                     make_dir_if_not_present=True, include_cif=False):
@@ -286,16 +287,22 @@ class DictSet(Wien2kInputSet):
 
     @property
     def in0(self):
-        pass
+        return In0()
 
+    @property
     def in1(self):
-        pass
+        return In1()
 
+    @property
     def in2(self):
-        pass
+        return In2()
 
+    @property
     def innes(self):
-        pass
+        settings = self.user_control_settings or self._config_dict["Innes"]
+        #TODO break out configuration from the user_control_settings.
+        #TODO Need to think of a good place to put the "Atom of interest" into the control set...
+        return Innes(settings)
 
     @property
     def kpoints(self):
@@ -304,7 +311,29 @@ class DictSet(Wien2kInputSet):
         through some other function!
         :return:
         """
-        pass
+        settings = self.user_kpoints_settings or self._config_dict["KList"]
+
+        if isinstance(settings, Kpoints):
+            return settings
+
+        if settings.get('grid_density'):
+            kpoints = Kpoints.automatic_density(
+                self.structure, int(settings['grid_density']),
+                self.force_gamma)
+            self.user_control_settings["WIEN_KPOINTS"] = kpoints.num_kpts
+
+        elif settings.get('reciprocal_density'):
+            return Kpoints.automatic_density_by_vol(
+                self.structure, int(settings['reciprocal_density']),
+                self.force_gamma)
+
+        # Raise error. Unsure of which kpoint generation to use
+        else:
+            raise ValueError(
+                "Invalid KPoint Generation algo : Supported Keys are "
+                "grid_density: for Kpoints.automatic_density generation, "
+                "reciprocal_density: for KPoints.automatic_density_by_vol "
+                "generation, and length  : for Kpoints.automatic generation")
 
     def __str__(self):
         return self.__class__.__name__
@@ -340,10 +369,42 @@ class LETIRelaxSet(DictSet):
             structure, LETIRelaxSet.CONFIG, **kwargs)
         self.kwargs = kwargs
 
+
+
+
 class LETIStaticSet(DictSet):
     """
     TODO same as Relax set. Important to implement from_prev_calc to do my imports
     """
+
+    def __init__(self, structure, prev_control=None, prev_kpoints=None,
+                 reciprocal_density=100, **kwargs):
+        super(LETIStaticSet, self).__init__(structure, **kwargs)
+        if isinstance(prev_control, six.string_types):
+            prev_control = Control.from_file(prev_control)
+        if isinstance(prev_kpoints, six.string_types):
+            prev_kpoints = Kpoints.from_file(prev_kpoints)
+
+        self.prev_control = prev_control
+        self.prev_kpoints = prev_kpoints
+        self.reciprocal_density = reciprocal_density
+        self.structure = structure
+        self.kwargs = kwargs
+
+    @property
+    def control(self):
+        parent_control = super(LETIStaticSet, self).control
+        control = Control(self.prev_control) if self.prev_control is not None else \
+            Control(parent_control)
+
+        # Control.update() #set some reset defaults
+
+        control["WIENEC"] = min(control.get("WIENEC", 1), parent_control["WIENEC"])
+        return control
+
+    @property
+    def kpoints(self):
+        return kpoints
 
     @classmethod
     def from_prev_calc(cls, prev_calc_dir, standardize=False, sym_prec=0.1,
@@ -361,4 +422,21 @@ class LETIStaticSet(DictSet):
         :param kwargs:
         :return:
         """
+
+        case = os.path.basename(os.path.normpath(prev_calc_dir))
+
+        prev_control = Control.from_file(os.path.join(prev_calc_dir, 'wien2k.in'))
+        prev_struct = Struct.from_file(os.path.join(prev_calc_dir, f"{case}.struct"))
+        prev_kpoints = Kpoints.from_file(os.path.join(prev_calc_dir, f"{case}.klist"))
+        prev_scffile = Scffile(os.path.join(prev_calc_dir, f"{case}.scf"))
+
+        # multiply the reciprocal density if needed:
+        if small_gap_multiply:
+            gap = prev_scffile.gap
+            if gap <= small_gap_multiply[0]:
+                reciprocal_density *= small_gap_multiply[1]
+
+        return LETIStaticSet(structure=prev_struct.structure, prev_control=prev_control,
+                             prev_kpoints=prev_kpoints, reciprocal_density=reciprocal_density,
+                             **kwargs)
 
