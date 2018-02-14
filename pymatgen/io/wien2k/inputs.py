@@ -368,8 +368,7 @@ class KListSupportedModes(Enum):
     Automatic = 0
     Gamma = 1
     Monkhorst = 2
-
-    # TODO factor this out, since the paradigm doesn't apply
+    List = 3
 
     def __str__(self):
         return self.name
@@ -563,6 +562,31 @@ class Kpoints(MSONable):
 
         return Kpoints(comment, 0, style, [num_div], [0, 0, 0])
 
+    def __str__(self):
+        if self.style == Kpoints.supported_modes.List:
+            raise ValueError("Lists of wien2k.Kpoints not yet supported for output")
+
+        lines = [str(self.num_kpts)]
+        if self.kpts:
+            lines.append(",".join([str(x) for x in self.kpts[0]]))
+        if self.style == Kpoints.supported_modes.Gamma:
+            lines.append("0")
+        else:
+            lines.append("1")
+
+        return "\n".join(lines) + "\n"
+
+    def write_file(self, filename):
+        """
+        Write kgen input
+        :param filename: Filename to write to
+        """
+        with zopen(filename, "wt") as f:
+            f.write(self.__str__())
+
+    def __repr__(self):
+        return self.__str__()
+
     @staticmethod
     def automatic_density_by_vol(structure, kppvol, force_gamma=False):
         """
@@ -611,21 +635,20 @@ class Kpoints(MSONable):
             Kpoints object
         """
 
-        reader = ff.FortranRecordReader('(I10,4I10,f5.1)')
-        reader1 = ff.FortranRecordReader('(I10,4I10,3f5.1,2x,i8,\' k, div: (\',3i3,\')\')')
+        reader = ff.FortranRecordReader('(A10,4I10,f5.1)')
+        reader1 = ff.FortranRecordReader(r'(A10,4I10,3f5.1,2x,i8,10x,3i3)')
         kpts = []
         kpts_weights = []
 
-        lines = [line.strip() for line in string.splitlines()]
+        lines = string.splitlines()
 
         for line_number, line in enumerate(lines):
             if line == "END":
                 break
-            if line_number == 1:
+            if line_number == 0:
                 try:
                     [kpt, k_x, k_y, k_z, k_weight, i_div, junk1, junk2, num_kpts0, n_divx, n_divy,
-                     ndivz] = reader1.read(
-                        line)
+                     ndivz] = reader1.read(line)
                     style = Kpoints.supported_modes.Gamma if k_x == k_y == k_z == 0 else Kpoints.supported_modes.Monkhorst
                 except ValueError:
                     raise ValueError('Error reading first k-point', line)
@@ -1131,6 +1154,8 @@ class Control(dict, MSONable):
         for k in keys:
             lines.append(f'export {k}="{self[k]}"')
 
+        lines.append(f'eval {self["INIT"]}')    #initialize the calculation
+        lines.append(f'eval {self["DEPLOY"]}')  #TODO we need to deploy inputs after this step! Python or bash?
         lines.append(f'eval {self["COMMAND"]}') #execute the command last
 
         if pretty:
@@ -1270,14 +1295,51 @@ class In0(MSONable):
     """
     Case.in0 class
     """
-    pass
+    def __init__(self):
+        #init a case.in0 file
+        pass
+
+    def write_file(self, filename):
+        """
+        Write a case.in0 file
+        :param filename: file to write
+        :return:
+        """
+        warnings.warn("Not implemented, depending on init_lapw to auto-generate.")
+        pass
+
 
 class In1(MSONable):
     """
     Case.in1 class
     """
+    def __init__(self):
+        #init a case.in1 file
+        self.exists = True
+
+    def write_file(self, filename):
+        """
+        Write a case.in1 file
+        :param filename: file to write
+        :return:
+        """
+        warnings.warn("Not implemented, depending on init_lapw to auto-generate.")
+
 
 class In2(MSONable):
     """
     Case.in2 class
     """
+
+    def __init__(self):
+        # init a case.in0 file
+        pass
+
+    def write_file(self, filename):
+        """
+        Write a case.in2 file
+        :param filename: file to write
+        :return:
+        """
+        warnings.warn("Not implemented, depending on init_lapw to auto-generate.")
+        pass
