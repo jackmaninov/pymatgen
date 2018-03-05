@@ -1,0 +1,12 @@
+ 4,'TiC-test.klist',          'unknown','formatted',0
+ 5,'TiC-test.in1',   'old',    'formatted',0
+ 6,'TiC-test.output1','unknown','formatted',0
+10,'./TiC-test.vector', 'unknown','unformatted',9000
+11,'TiC-test.energy', 'unknown','formatted',0
+18,'TiC-test.vsp',       'old',    'formatted',0
+19,'TiC-test.vns',       'unknown','formatted',0
+20,'TiC-test.struct',         'old',    'formatted',0
+21,'TiC-test.scf1',   'unknown','formatted',0
+55,'TiC-test.vec',            'unknown','formatted',0
+71,'TiC-test.nsh',    'unknown','formatted',0
+200,'./TiC-test.storeHinv', 'replace','unformatted',9000

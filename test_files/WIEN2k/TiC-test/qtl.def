@@ -1,0 +1,21 @@
+ 4,'TiC-test.inso',   'unknown',    'formatted',0
+ 5,'TiC-test.inq',   'old',    'formatted',0
+ 6,'TiC-test.outputq','unknown','formatted',0
+ 8,'TiC-test.scf2',       'old',    'formatted',0
+ 9,'./TiC-test.vector', 'unknown','unformatted',9000
+10,'./TiC-test.vectordn', 'unknown','unformatted',9000
+12,'TiC-test.dmat',       'unknown','formatted',0
+16,'TiC-test.qtl',       'unknown','formatted',0
+18,'TiC-test.vsp',       'old',    'formatted',0
+19,'TiC-test.vspdn',       'unknown','formatted',0
+20,'TiC-test.struct',         'old',    'formatted',0
+21,'TiC-test.scfq',   'unknown',    'formatted',0
+22,'TiC-test.rotlm',   'unknown',    'formatted',0
+26,'TiC-test.weight',       'old',    'formatted',9000
+29,'TiC-test.tmp','unknown','unformatted',9000
+30,'TiC-test.qtltext','unknown','formatted',0
+31,'TiC-test.qtlatom','unknown','formatted',0
+59,'TiC-test.energydn', 'unknown','formatted',0
+60,'TiC-test.energy', 'unknown','formatted',0
+32,'TiC-test.cf1','unknown','formatted',0
+71,'TiC-test.int1','unknown','formatted',0
