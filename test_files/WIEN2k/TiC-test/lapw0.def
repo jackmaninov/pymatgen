@@ -1,0 +1,27 @@
+ 3,'TiC-test.rhopw',   'unknown','formatted',0
+ 4,'TiC-test.inm',     'unknown','formatted',0
+ 5,'TiC-test.in0',     'old',    'formatted',0
+ 6,'TiC-test.output0', 'unknown','formatted',0
+ 7,'TiC-test.vorbup',  'unknown','formatted',0
+ 8,'TiC-test.clmsum',  'old',    'formatted',0
+ 9,'TiC-test.vtotal',  'unknown','formatted',0
+10,'TiC-test.vcoul',   'unknown','formatted',0
+11,'TiC-test.r2v',     'unknown','formatted',0
+12,'TiC-test.clmup',   'unknown','formatted',0
+13,'TiC-test.clmdn',   'unknown','formatted',0
+14,'TiC-test.mbjmix',     'unknown','formatted',0
+16,'TiC-test.vsp','unknown','formatted',0
+17,'TiC-test.vspdn',   'unknown','formatted',0
+18,'TiC-test.vns','unknown','formatted',0
+19,'TiC-test.vnsdn',   'unknown','formatted',0
+20,'TiC-test.struct',  'old',    'formatted',0         
+21,'TiC-test.scf0',    'unknown','formatted',0
+28,'TiC-test.vrespsum','unknown','formatted',0
+29,'TiC-test.vrespup', 'unknown','formatted',0
+30,'TiC-test.vrespdn', 'unknown','formatted',0
+50,'TiC-test.eeceup', 'unknown','formatted',0
+51,'TiC-test.eecedn', 'unknown','formatted',0
+62,'TiC-test.grr',    'unknown','formatted',0
+63,'/home/em250772/WIEN2k_17/SRC_lapw0/xc_funcs.h','unknown','formatted',0
+64,'TiC-test.r2v_nonloc',     'unknown','unformatted',0
+61,'TiC-test.in0abp',     'unknown','formatted',0

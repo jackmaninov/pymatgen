@@ -1,0 +1,7 @@
+export BASE_COMMAND="run_lapw"
+export COMMAND="$RUN_COMMAND -ec $WIENEC -cc $WIENCC -it -p"
+export RUN_COMMAND="run_lapw"
+export SP_COMMAND="runsp_lapw"
+export WIENCC="0.001"
+export WIENEC="0.0001"
+eval $RUN_COMMAND -ec $WIENEC -cc $WIENCC -it -p

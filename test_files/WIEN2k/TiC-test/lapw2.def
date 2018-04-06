@@ -1,0 +1,27 @@
+ 2,'TiC-test.nsh',    'unknown','formatted',0
+ 3,'TiC-test.in1',   'unknown','formatted',0
+ 4,'TiC-test.inso',           'unknown','formatted',0
+ 5,'TiC-test.in2',   'old',    'formatted',0
+ 6,'TiC-test.output2','unknown','formatted',0
+ 7,'TiC-test.vorb','unknown','formatted',0
+ 8,'TiC-test.clmval','unknown','formatted',0
+10,'./TiC-test.vector', 'unknown','unformatted',9000
+13,'TiC-test.recprlist',      'unknown','unformatted',9000
+14,'TiC-test.kgen',        'unknown','formatted',0
+15,'TiC-test.tmp',       'unknown','unformatted',0
+16,'TiC-test.qtl',       'unknown','formatted',0
+17,'TiC-test.weightaver','unknown','formatted',0
+18,'TiC-test.vsp',       'old',    'formatted',0
+19,'TiC-test.vns',       'unknown','formatted',0
+20,'TiC-test.struct',         'old',    'formatted',0
+21,'TiC-test.scf2','unknown','formatted',0
+922,'TiC-test.rotlm',   'unknown',    'formatted',0
+23,'TiC-test.radwf',   'unknown',    'formatted',0
+26,'TiC-test.weight',   'unknown','formatted',0
+27,'TiC-test.weightdn',   'unknown','formatted',0
+29,'TiC-test.energydn','unknown','formatted',0
+30,'TiC-test.energy', 'unknown','formatted',0
+32,'TiC-test.qdmft',   'unknown',    'formatted',0
+34,'TiC-test.oubwin',   'unknown',    'formatted',0
+231,'TiC-test.dmftsym',   'unknown',    'formatted',0
+

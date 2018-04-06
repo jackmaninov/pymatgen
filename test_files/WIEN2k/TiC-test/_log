@@ -1,0 +1,33 @@
+Tue Jan 16 14:39:11 CET 2018> (x) qtl -telnes
+Tue Jan 16 14:39:14 CET 2018> (x) lapw1
+Tue Jan 16 14:39:24 CET 2018> (x) lapw1
+Tue Jan 16 14:46:24 CET 2018> (x) qtl -telnes
+>   (run_lapw) options: -ec 0.0001 -cc 0.001 -NI
+Tue Jan 16 14:48:11 CET 2018> (x) lapw0
+Tue Jan 16 14:48:12 CET 2018> (x) lapw1
+Tue Jan 16 14:48:12 CET 2018> (x) lapw2
+Tue Jan 16 14:48:13 CET 2018> (x) lcore
+Tue Jan 16 14:48:13 CET 2018> (x) mixer
+Tue Jan 16 14:48:13 CET 2018> (x) lapw0
+Tue Jan 16 14:48:15 CET 2018> (x) lapw1
+Tue Jan 16 14:48:15 CET 2018> (x) lapw2
+Tue Jan 16 14:48:15 CET 2018> (x) lcore
+Tue Jan 16 14:48:15 CET 2018> (x) mixer
+Tue Jan 16 14:48:15 CET 2018> (x) lapw0
+Tue Jan 16 14:48:16 CET 2018> (x) lapw1
+Tue Jan 16 14:48:17 CET 2018> (x) lapw2
+Tue Jan 16 14:48:17 CET 2018> (x) lcore
+Tue Jan 16 14:48:17 CET 2018> (x) mixer
+Tue Jan 16 14:48:17 CET 2018> (x) lapw0
+Tue Jan 16 14:48:18 CET 2018> (x) lapw1
+Tue Jan 16 14:48:18 CET 2018> (x) lapw2
+Tue Jan 16 14:48:19 CET 2018> (x) lcore
+Tue Jan 16 14:48:19 CET 2018> (x) mixer
+Tue Jan 16 14:48:19 CET 2018> (x) lapw0
+Tue Jan 16 14:48:20 CET 2018> (x) lapw1
+Tue Jan 16 14:48:20 CET 2018> (x) lapw2
+Tue Jan 16 14:48:21 CET 2018> (x) lcore
+Tue Jan 16 14:48:21 CET 2018> (x) mixer
+Tue Jan 16 14:48:27 CET 2018> (x) qtl -telnes
+Tue Jan 16 14:48:41 CET 2018> (x) telnes3
+Tue Jan 16 14:49:04 CET 2018> (x) broadening

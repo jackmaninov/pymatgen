@@ -1,0 +1,14 @@
+show all
+set terminal png
+set output '/home/em250772/.w2web/summer.cluster/tmp/946116-151787.png'
+set title ''
+set style data lines
+set xlabel "eV"
+set ylabel " ELNES (broadened)"
+set xrange [:]
+set yrange [:]
+set yzeroaxis
+plot '/W/em250772/TiC-test/TiC-test.broadspec' using 1:2 title 'ELNES (broadened)'
+set terminal postscript
+set output '/home/em250772/.w2web/summer.cluster/tmp/946116-151787.ps'
+replot

@@ -1,0 +1,13 @@
+ 5,'TiC-test.inm',       'old',    'formatted',0
+ 6,'TiC-test.outputm',   'unknown','formatted',0
+ 7,'TiC-test.inc',       'old',    'formatted',0
+10,'TiC-test.clmsum_old','unknown','formatted',0
+17,'TiC-test.clmval',    'unknown','formatted',0
+18,'TiC-test.clmsc',     'unknown','formatted',0
+19,'TiC-test.clmcor',    'unknown','formatted',0
+20,'TiC-test.struct',    'old',    'formatted',0
+21,'TiC-test.scfm',      'unknown','formatted',0
+22,'TiC-test.scf',       'unknown','formatted',0
+31,'TiC-test.broyd1',    'unknown','unformatted',164896
+32,'TiC-test.broyd2',    'unknown','unformatted',164896
+51,'TiC-test.clmsum',    'unknown','formatted',0

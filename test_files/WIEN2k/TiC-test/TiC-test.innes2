@@ -1,0 +1,25 @@
+TiC C K edge of first atom.                                 
+2
+1 0
+285.00
+200
+0.0000 35.0000 0.0500
+5.00 1.87
+5 2
+0.50
+DETECTOR POSITION
+0.000 0.000
+MODUS
+energy
+SELECTION RULE
+n
+LSELECTION RULE
+d
+INITIALIZATION
+y y
+y y
+RELATIVISTIC
+1
+QGRID
+U
+END

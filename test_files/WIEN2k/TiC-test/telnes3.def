@@ -1,0 +1,23 @@
+3, 'TiC-test.kgen','unknown','formatted',0
+5, 'TiC-test.innes',           'old',    'formatted',0
+6, 'TiC-test.outputelnes',       'unknown','formatted',0
+7, 'TiC-test.inc',             'unknown',    'formatted',0
+8, 'TiC-test.inb','unknown','formatted',0
+9, 'TiC-test.corewavef',   'unknown','formatted',0
+10,'TiC-test.final',              'unknown','formatted',0
+18,'TiC-test.vsp',        'unknown',    'formatted',0
+19,'TiC-test.vtotal','unknown','formatted',0
+20,'TiC-test.struct',          'old',    'formatted',0
+30,'TiC-test.qtl',        'unknown',    'formatted',0
+31,'TiC-test.rotij',           'unknown',    'formatted',0
+46,'TiC-test.ortho',         'unknown','formatted',0
+47,'TiC-test.elnes',        'unknown','formatted',0
+48,'TiC-test.ctr',        'unknown','formatted',0
+49,'TiC-test.sdlm',        'unknown','formatted',0
+50,'TiC-test.matrix','unknown','formatted',0
+56,'TiC-test.cdos','unknown','formatted',0
+57,'TiC-test.dos',     'unknown',    'formatted',0
+58,'TiC-test.xdos','unknown','formatted',0
+59,'TiC-test.sp2','unknown','formatted',0
+60,'TiC-test.angular','unknown','formatted',0
+69,'TiC-test.eelstable','unknown','formatted',0
