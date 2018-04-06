@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pymatgen.io.abinit.tasks &#8212; pymatgen 2018.1.29 documentation</title>
+    <title>pymatgen.io.abinit.tasks &#8212; pymatgen 2018.4.6 documentation</title>
     <link rel="stylesheet" href="../../../../_static/proBlue.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../../',
-        VERSION:     '2018.1.29',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
@@ -32,8 +24,7 @@
   _gaq.push(['_trackPageview']);
 </script>
 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -43,7 +34,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">pymatgen 2018.1.29 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">pymatgen 2018.4.6 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="../../../pymatgen.html" accesskey="U">pymatgen</a> &#187;</li> 
       </ul>
@@ -2538,6 +2529,101 @@
         <span class="n">retcode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">retcode</span>
 
+    <span class="k">def</span> <span class="nf">get_graphviz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;automatic&quot;</span><span class="p">,</span> <span class="n">graph_attr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">node_attr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">edge_attr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate task graph in the DOT language (only parents and children of this task).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            engine: [&#39;dot&#39;, &#39;neato&#39;, &#39;twopi&#39;, &#39;circo&#39;, &#39;fdp&#39;, &#39;sfdp&#39;, &#39;patchwork&#39;, &#39;osage&#39;]</span>
+<span class="sd">            graph_attr: Mapping of (attribute, value) pairs for the graph.</span>
+<span class="sd">            node_attr: Mapping of (attribute, value) pairs set for all nodes.</span>
+<span class="sd">            edge_attr: Mapping of (attribute, value) pairs set for all edges.</span>
+
+<span class="sd">        Returns: graphviz.Digraph &lt;https://graphviz.readthedocs.io/en/stable/api.html#digraph&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># https://www.graphviz.org/doc/info/</span>
+        <span class="kn">from</span> <span class="nn">graphviz</span> <span class="k">import</span> <span class="n">Digraph</span>
+        <span class="n">fg</span> <span class="o">=</span> <span class="n">Digraph</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="c1"># filename=&quot;task_%s.gv&quot; % os.path.basename(self.workdir),</span>
+            <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span> <span class="k">if</span> <span class="n">engine</span> <span class="o">==</span> <span class="s2">&quot;automatic&quot;</span> <span class="k">else</span> <span class="n">engine</span><span class="p">)</span>
+
+        <span class="c1"># Set graph attributes.</span>
+        <span class="c1">#fg.attr(label=&quot;%s@%s&quot; % (self.__class__.__name__, self.relworkdir))</span>
+        <span class="n">fg</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="c1">#fg.attr(fontcolor=&quot;white&quot;, bgcolor=&#39;purple:pink&#39;)</span>
+        <span class="c1">#fg.attr(rankdir=&quot;LR&quot;, pagedir=&quot;BL&quot;)</span>
+        <span class="c1">#fg.attr(constraint=&quot;false&quot;, pack=&quot;true&quot;, packMode=&quot;clust&quot;)</span>
+        <span class="n">fg</span><span class="o">.</span><span class="n">node_attr</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;lightblue2&#39;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;filled&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Add input attributes.</span>
+        <span class="k">if</span> <span class="n">graph_attr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fg</span><span class="o">.</span><span class="n">graph_attr</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">graph_attr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">node_attr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fg</span><span class="o">.</span><span class="n">node_attr</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">node_attr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">edge_attr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fg</span><span class="o">.</span><span class="n">edge_attr</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">edge_attr</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">node_kwargs</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="c1">#shape=&quot;circle&quot;,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">color_hex</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s2">&quot;pos_str&quot;</span><span class="p">)</span> <span class="k">else</span>
+                    <span class="n">node</span><span class="o">.</span><span class="n">pos_str</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">node</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">edge_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">arrowType</span><span class="o">=</span><span class="s2">&quot;vee&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;solid&quot;</span><span class="p">)</span>
+        <span class="n">cluster_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">rankdir</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">pagedir</span><span class="o">=</span><span class="s2">&quot;BL&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;rounded&quot;</span><span class="p">,</span> <span class="n">bgcolor</span><span class="o">=</span><span class="s2">&quot;azure2&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Build cluster with tasks.</span>
+        <span class="n">cluster_name</span> <span class="o">=</span> <span class="s2">&quot;cluster</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">with</span> <span class="n">fg</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">cluster_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">wg</span><span class="p">:</span>
+            <span class="n">wg</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="o">**</span><span class="n">cluster_kwargs</span><span class="p">)</span>
+            <span class="n">wg</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="n">wg</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">node_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+            <span class="c1"># Connect task to children.</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">():</span>
+                <span class="c1"># Test if child is in the same work.</span>
+                <span class="n">myg</span> <span class="o">=</span> <span class="n">wg</span> <span class="k">if</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">work</span> <span class="k">else</span> <span class="n">fg</span>
+                <span class="n">myg</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">node_kwargs</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+                <span class="c1"># Find file extensions required by this task</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="p">[</span><span class="n">dep</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">deps</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="n">edge_label</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">deps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">exts</span><span class="p">)</span>
+                <span class="n">myg</span><span class="o">.</span><span class="n">edge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">edge_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">color_hex</span><span class="p">,</span>
+                         <span class="o">**</span><span class="n">edge_kwargs</span><span class="p">)</span>
+
+            <span class="c1"># Connect task to parents</span>
+            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">():</span>
+                <span class="c1"># Test if parent is in the same work.</span>
+                <span class="n">myg</span> <span class="o">=</span> <span class="n">wg</span> <span class="k">if</span> <span class="n">parent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">work</span> <span class="k">else</span> <span class="n">fg</span>
+                <span class="n">myg</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">node_kwargs</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+                <span class="c1"># Find file extensions required by self (task)</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="p">[</span><span class="n">dep</span><span class="o">.</span><span class="n">node</span> <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deps</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+                <span class="n">edge_label</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">exts</span><span class="p">)</span>
+                <span class="n">myg</span><span class="o">.</span><span class="n">edge</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">edge_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">color_hex</span><span class="p">,</span>
+                         <span class="o">**</span><span class="n">edge_kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Treat the case in which we have a work producing output for other tasks.</span>
+        <span class="c1">#for work in self:</span>
+        <span class="c1">#    children = work.get_children()</span>
+        <span class="c1">#    if not children: continue</span>
+        <span class="c1">#    cluster_name = &quot;cluster%s&quot; % work.name</span>
+        <span class="c1">#    seen = set()</span>
+        <span class="c1">#    for child in children:</span>
+        <span class="c1">#        # This is not needed, too much confusing</span>
+        <span class="c1">#        #fg.edge(cluster_name, child.name, color=work.color_hex, **edge_kwargs)</span>
+        <span class="c1">#        # Find file extensions required by work</span>
+        <span class="c1">#        i = [dep.node for dep in child.deps].index(work)</span>
+        <span class="c1">#        for ext in child.deps[i].exts:</span>
+        <span class="c1">#            out = &quot;%s (%s)&quot; % (ext, work.name)</span>
+        <span class="c1">#            fg.node(out)</span>
+        <span class="c1">#            fg.edge(out, child.name, **edge_kwargs)</span>
+        <span class="c1">#            key = (cluster_name, out)</span>
+        <span class="c1">#            if key not in seen:</span>
+        <span class="c1">#                fg.edge(cluster_name, out, color=work.color_hex, **edge_kwargs)</span>
+        <span class="c1">#                seen.add(key)</span>
+
+        <span class="k">return</span> <span class="n">fg</span>
+
 
 <span class="k">class</span> <span class="nc">DecreaseDemandsError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -2773,7 +2859,7 @@
         <span class="n">max_ncpus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">max_cores</span>
         <span class="k">if</span> <span class="n">max_ncpus</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
 
-        <span class="n">autoparal_vars</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">autoparal</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">autoparal</span><span class="p">,</span> <span class="n">max_ncpus</span><span class="o">=</span><span class="n">max_ncpus</span><span class="p">)</span>
+        <span class="n">autoparal_vars</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">autoparal</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">autoparal</span><span class="p">,</span> <span class="n">max_ncpus</span><span class="o">=</span><span class="n">max_ncpus</span><span class="p">,</span> <span class="n">mem_test</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_vars</span><span class="p">(</span><span class="n">autoparal_vars</span><span class="p">)</span>
 
         <span class="c1"># Run the job in a shell subprocess with mpi_procs = 1</span>
@@ -2784,6 +2870,7 @@
         <span class="n">retcode</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         <span class="c1"># To avoid: ResourceWarning: unclosed file &lt;_io.BufferedReader name=87&gt; in py3k</span>
         <span class="n">process</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1">#process.stdout.close()</span>
 
         <span class="c1"># Remove the variables added for the automatic parallelization</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">remove_vars</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">autoparal_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
@@ -2795,8 +2882,15 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">pconfs</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">parser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;Error while parsing Autoparal section:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">straceback</span><span class="p">())</span>
-            <span class="k">return</span> <span class="mi">2</span>
+            <span class="c1"># In principle Abinit should have written a complete log file</span>
+            <span class="c1"># because we called .wait() but sometimes the Yaml doc is incomplete and</span>
+            <span class="c1"># the parser raises. Let&#39;s wait 5 secs and then try again.</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pconfs</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">parser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;Error while parsing Autoparal section:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">straceback</span><span class="p">())</span>
+                <span class="k">return</span> <span class="mi">2</span>
 
         <span class="c1">######################################################</span>
         <span class="c1"># Select the optimal configuration according to policy</span>
@@ -3281,7 +3375,7 @@
         <span class="n">events</span><span class="o">.</span><span class="n">NscfConvergenceWarning</span><span class="p">,</span>
     <span class="p">]</span>
 
-    <span class="n">color_rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">160</span><span class="p">,</span> <span class="mi">82</span><span class="p">,</span> <span class="mi">45</span><span class="p">))</span> <span class="o">/</span> <span class="mi">255</span>
+    <span class="n">color_rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">200</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span> <span class="o">/</span> <span class="mi">255</span>
 
 <div class="viewcode-block" id="NscfTask.setup"><a class="viewcode-back" href="../../../../pymatgen.io.abinit.tasks.html#pymatgen.io.abinit.tasks.NscfTask.setup">[docs]</a>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -3289,7 +3383,6 @@
 <span class="sd">        (in principle, it&#39;s possible to interpolate inside Abinit but tests revealed some numerical noise</span>
 <span class="sd">        Here we change the input file of the NSCF task to have the same FFT mesh.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: This won&#39;t work if parent_node is a file</span>
         <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deps</span><span class="p">:</span>
             <span class="k">if</span> <span class="s2">&quot;DEN&quot;</span> <span class="ow">in</span> <span class="n">dep</span><span class="o">.</span><span class="n">exts</span><span class="p">:</span>
                 <span class="n">parent_task</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">node</span>
@@ -3742,7 +3835,7 @@
         <span class="n">events</span><span class="o">.</span><span class="n">ScfConvergenceWarning</span><span class="p">,</span>
     <span class="p">]</span>
 
-    <span class="n">color_rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span> <span class="o">/</span> <span class="mi">255</span>
+    <span class="n">color_rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">250</span><span class="p">))</span> <span class="o">/</span> <span class="mi">255</span>
 
 <div class="viewcode-block" id="PhononTask.restart"><a class="viewcode-back" href="../../../../pymatgen.io.abinit.tasks.html#pymatgen.io.abinit.tasks.PhononTask.restart">[docs]</a>    <span class="k">def</span> <span class="nf">restart</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -4636,12 +4729,14 @@
         <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -4657,7 +4752,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">pymatgen 2018.1.29 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">pymatgen 2018.4.6 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="../../../pymatgen.html" >pymatgen</a> &#187;</li> 
       </ul>
@@ -4665,7 +4760,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2011, Pymatgen Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
     </div>
 <div class="footer">This page uses <a href="http://analytics.google.com/">
 Google Analytics</a> to collect statistics. You can disable it by blocking

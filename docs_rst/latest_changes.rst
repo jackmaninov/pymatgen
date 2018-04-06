@@ -1,8 +1,9 @@
 Change log
 ==========
 
-v2018.1.29
-----------
-* Improvements to local_env (Nils)
-* Term symbols for Element (Weike Ye).
-* Timeout for enumlib (Horton).
+v2018.4.6
+---------
+* Updated debye temperature formulation (Joey Montoya)
+* Add bandgap option for FermiDos for scissoring (Alireza Faghaninia)
+* Improved Pourbaix code (Joey Montoya)
+* Local env code improvements (Nils)

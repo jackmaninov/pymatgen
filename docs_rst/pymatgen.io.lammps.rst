@@ -1,5 +1,11 @@
-pymatgen\.io\.lammps package
-============================
+pymatgen.io.lammps package
+==========================
+
+Subpackages
+-----------
+
+.. toctree::
+
 
 Submodules
 ----------

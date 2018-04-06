@@ -1,5 +1,11 @@
-pymatgen\.apps\.battery package
-===============================
+pymatgen.apps.battery package
+=============================
+
+Subpackages
+-----------
+
+.. toctree::
+
 
 Submodules
 ----------

@@ -1,5 +1,11 @@
-pymatgen\.ext package
-=====================
+pymatgen.ext package
+====================
+
+Subpackages
+-----------
+
+.. toctree::
+
 
 Submodules
 ----------
