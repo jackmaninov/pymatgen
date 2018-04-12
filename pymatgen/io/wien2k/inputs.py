@@ -1291,13 +1291,89 @@ class Control(dict, MSONable):
                 params[k] = v
         return Control(params)
 
+
 class In0(MSONable):
     """
     Case.in0 class
     """
-    def __init__(self):
+    def __init__(self, switch = 'TOT', xc=['XC_PBE'], r2v=False,
+                 hmod='', ifft=False, luse=13, ifftxyz=[-1,-1,-1], ifftFactor = 1, iprint=0,
+                 zigzag=''):
         #init a case.in0 file
-        pass
+        self.switch=switch
+        self.xc=indxc
+        self.r2v=r2v
+        self.hmod=hmod
+        self.ifft=ifft
+        self.luse=luse
+        self.ifftxyz=ifftxyz
+        self.ifftFactor=ifftFactor
+        self.iprint=iprint
+        self.zigzag=zigzag
+
+    @staticmethod
+    def from_file(self, filename):
+        """
+        Read a case.in0
+        :param filename: case.in0 input
+        :return: In0 object
+        """
+        with zopen(filename, "rt") as f:
+            return In0.from_string(f.read())
+
+    @staticmethod
+    def from_string(data):
+        """
+        Parse an in0 string
+        :param data: string
+        :return: In0 object
+        """
+
+        lines = data.splitlines()
+
+        # first line
+        line0 = lines[0].split()
+        switch = line0[0]
+        xc=[]
+        line0Comment=''
+        for tok in line0[1:]:
+            if tok[0] not in ['#','!','(']:
+                xc.append(tok)
+            else:
+                line0Comment = tok
+        if len(xc) > 4 raise ValueError('Too many XC switches (maximum 4)')
+
+        # second line
+        line1 = lines[1].split()
+        r2v = line1[0]
+        hmod=''
+        ifft=''
+        luse=13
+        for tok in line1[1:]:
+            if tok in ['EECE', 'HYBR']:
+                hmod = tok
+            elif tok is 'IFFT':
+                ifft = True
+            elif tok.isdigit():
+                luse = int(tok)
+            else:
+                line1Comment = tok
+
+        # third (optional) IFFT line
+        if ifft:
+            line2 = lines[2].split()
+            ifftxyz = line2[0:3]
+            ifftfactor = line2[3]
+            if len(line2) >= 5:
+                iprint = line2[4]
+            if len(line2) > 5:
+                line2comment = " ".join(line2[5:])
+        elif len(lines) > 2
+            # zig-zag potential line (don't parse this)
+            zigzag = lines[-1]
+
+        return In0(switch, xc, r2v, hmod, ifft, luse, ifftxyz, ifftFactor, iprint, zigzag )
+
 
     def write_file(self, filename):
         """
