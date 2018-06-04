@@ -1341,7 +1341,8 @@ class In0(MSONable):
                 xc.append(tok)
             else:
                 line0Comment = tok
-        if len(xc) > 4 raise ValueError('Too many XC switches (maximum 4)')
+        if len(xc) > 4:
+            raise ValueError('Too many XC switches (maximum 4)')
 
         # second line
         line1 = lines[1].split()
@@ -1368,7 +1369,7 @@ class In0(MSONable):
                 iprint = line2[4]
             if len(line2) > 5:
                 line2comment = " ".join(line2[5:])
-        elif len(lines) > 2
+        elif len(lines) > 2:
             # zig-zag potential line (don't parse this)
             zigzag = lines[-1]
 
