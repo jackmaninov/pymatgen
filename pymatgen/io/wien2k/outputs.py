@@ -24,7 +24,7 @@ from monty.re import regrep
 from six import string_types
 from six.moves import map, zip
 
-from pymatgen.analysis.nmr import NMRChemicalShiftNotation
+#from pymatgen.analysis.nmr import NMRChemicalShiftNotation
 from pymatgen.core.composition import Composition
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.periodic_table import Element
