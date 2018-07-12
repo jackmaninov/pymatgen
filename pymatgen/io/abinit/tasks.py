@@ -53,6 +53,7 @@ __all__ = [
     "DdkTask",
     "PhononTask",
     "SigmaTask",
+    "EphTask",
     "OpticTask",
     "AnaddbTask",
     "set_user_config_taskmanager"
@@ -1610,7 +1611,7 @@ class Task(six.with_metaclass(abc.ABCMeta, Node)):
         is preserved e.g. out_1WF14 --> out_1WF
         """
         filepaths = self.outdir.list_filepaths()
-        logger.info("in fix_ofiles with filepaths %s" % list(filepaths))
+        #logger.info("in fix_ofiles with filepaths %s" % list(filepaths))
 
         old2new = FilepathFixer().fix_paths(filepaths)
 

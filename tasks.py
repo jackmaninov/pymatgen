@@ -126,11 +126,25 @@ def contribute_dash(ctx):
         ctx.run('git push')
     ctx.run("rm pymatgen.tgz")
 
+@task
+def submit_dash_pr(ctx):
+    with cd("../Dash-User-Contributions/docsets/pymatgen"):
+
+        payload = {
+          "title": "Update pymatgen docset to v%s" % NEW_VER,
+          "body": "Update pymatgen docset to v%s" % NEW_VER,
+          "head": "Dash-User-Contributions:master",
+          "base": "master"
+        }
+        response = requests.post(
+            "https://api.github.com/repos/materialsvirtuallab/Dash-User-Contributions/pulls",
+            data=json.dumps(payload))
+        print(response.text)
 
 @task
 def update_doc(ctx):
     make_doc(ctx)
-    make_dash(ctx)
+    contribute_dash(ctx)
     ctx.run("git add .")
     ctx.run("git commit -a -m \"Update docs\"")
     ctx.run("git push")
