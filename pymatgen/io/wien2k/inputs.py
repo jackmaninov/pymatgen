@@ -215,6 +215,7 @@ class Struct(MSONable):
             # site line 1 (ex: ATOM    1: X=...)
             try:
                 [sitenumber, x, y, z] = reader5.read(lines[currentline])
+                sitenumber = abs(sitenumber)  # index is negative for non-cubic symmetry
                 assert sitenumber == i + 1
             except ValueError:
                 raise ValueError('Error reading coordinates of Atom ', i + 1)
