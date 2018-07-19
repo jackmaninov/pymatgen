@@ -328,7 +328,6 @@ class Eels(MSONable):
         """
 
         if len(self.data[0])>2:
-            print("Moo")
             return self.data[:, 2]
         else:
             warnings.warn("No first edge in " + self.filename)
