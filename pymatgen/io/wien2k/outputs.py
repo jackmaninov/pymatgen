@@ -236,7 +236,7 @@ class Scffile(MSONable):
         """
         TODO other items read in pymatgen.io.vasp.outputs.py.Outcar can be extracted
         from BerryPI calculations (Piezoelectric epsilon, Born effective charge)
-        
+
         WIENncm exists to deal with non-collinear spin structures, but is not included
         with the main distribution.
         """
@@ -298,9 +298,15 @@ class Eels(MSONable):
     Parse case.broadspec for EELS spectrum.
     """
 
-    def __init__(self, data, filename):
+    def __init__(self, data, filename=""):
         self.data = np.array(data)
         self.filename = filename
+
+    def __add__(self, other):
+        return self.first_edge + other.first_edge
+
+    def __radd__(self, other):
+        return self.first_edge
 
     @property
     def energies(self):
