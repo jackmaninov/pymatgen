@@ -364,6 +364,18 @@ class IStructureTest(PymatgenTest):
         sprim = s.get_primitive_structure(tolerance=0.1)
         self.assertEqual(len(sprim), 6)
 
+    def test_get_miller_index(self):
+        """Test for get miller index convenience method"""
+        struct = Structure(
+            [2.319, -4.01662582, 0., 2.319, 4.01662582, 0., 0., 0., 7.252],
+            ['Sn', 'Sn', 'Sn'],
+            [[2.319, 1.33887527, 6.3455], [1.1595, 0.66943764, 4.5325],
+             [1.1595, 0.66943764, 0.9065]],
+            coords_are_cartesian=True
+        )
+        hkl = struct.get_miller_index_from_site_indexes([0, 1, 2])
+        self.assertEqual(hkl, (2, -1, 0))
+
     def test_get_all_neighbors_and_get_neighbors(self):
         s = self.struct
         nn = s.get_neighbors_in_shell(s[0].frac_coords, 2, 4,
@@ -413,6 +425,8 @@ class IStructureTest(PymatgenTest):
                 self.struct.lattice.lengths_and_angles, decimal=5)
             self.assertArrayAlmostEqual(ss.frac_coords, self.struct.frac_coords)
             self.assertIsInstance(ss, IStructure)
+
+        self.assertTrue("Fd-3m" in self.struct.to(fmt="CIF", symprec=0.1))
 
         self.struct.to(filename="POSCAR.testing")
         self.assertTrue(os.path.exists("POSCAR.testing"))
@@ -484,7 +498,7 @@ class StructureTest(PymatgenTest):
         self.assertEqual(s[0].species_string, "Si")
         self.assertEqual(s[1].species_string, "F")
 
-    def test_append_insert_remove_replace(self):
+    def test_append_insert_remove_replace_substitute(self):
         s = self.structure
         s.insert(1, "O", [0.5, 0.5, 0.5])
         self.assertEqual(s.formula, "Si2 O1")
@@ -517,15 +531,24 @@ class StructureTest(PymatgenTest):
         self.assertEqual(s.formula, "Si0.75 Ge0.25 N1 O1")
 
         # In this case, s.ntypesp is ambiguous.
-        # for the time being, we raise AttributeError.
-        with self.assertRaises(AttributeError):
+        # code should raise AttributeError.
+        with self.assertRaises(TypeError):
             s.ntypesp
 
-        s.remove_species(["Si"])
-        self.assertEqual(s.formula, "Ge0.25 N1 O1")
+        s.replace_species({"Ge": "Si"})
+        s.substitute(1, "hydroxyl")
+        self.assertEqual(s.formula, "Si1 H1 N1 O1")
+        self.assertTrue(s.symbol_set == ("Si", "N", "O", "H"))
+        # Distance between O and H
+        self.assertAlmostEqual(s.get_distance(2, 3), 0.96)
+        # Distance between Si and H
+        self.assertAlmostEqual(s.get_distance(0, 3), 2.09840889)
+
+        s.remove_species(["H"])
+        self.assertEqual(s.formula, "Si1 N1 O1")
 
         s.remove_sites([1, 2])
-        self.assertEqual(s.formula, "Ge0.25")
+        self.assertEqual(s.formula, "Si1")
 
     def test_add_remove_site_property(self):
         s = self.structure

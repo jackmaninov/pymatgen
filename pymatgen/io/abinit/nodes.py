@@ -809,7 +809,9 @@ class Node(six.with_metaclass(abc.ABCMeta, object)):
         """
         import pandas as pd
         if self.is_task:
-            return pd.DataFrame([{v: self.input.get(v, None) for v in varnames}], index=[self.name], columns=varnames)
+            df = pd.DataFrame([{v: self.input.get(v, None) for v in varnames}], index=[self.name], columns=varnames)
+            df["class"] = self.__class__.__name__
+            return df
 
         elif self.is_work:
             frames = [task.get_vars_dataframe(*varnames) for task in self]
@@ -1018,6 +1020,8 @@ class FileNode(Node):
         return self._abiopen_abiext("_GSR.nc")
 
     def _abiopen_abiext(self, abiext):
+        import glob
+        from abipy import abilab
         if not self.filepath.endswith(abiext):
             msg = """\n
 File type does not match the abinit file extension.
@@ -1027,6 +1031,10 @@ Continuing anyway assuming that the netcdf file provides the API/dims/vars neeed
             logger.warning(msg)
             self.history.warning(msg)
 
+        #try to find file in the same path
+        filepath = os.path.dirname(self.filepath)
+        glob_result = glob.glob(os.path.join(filepath,"*%s"%abiext))
+        if len(glob_result): return abilab.abiopen(glob_result[0])
         return self.abiopen()
 
 

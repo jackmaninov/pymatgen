@@ -111,6 +111,10 @@ class Element(Enum):
 
         True if element is a transition metal.
 
+    .. attribute:: is_post_transition_metal
+
+        True if element is a post transition metal.
+
     .. attribute:: is_rare_earth_metal
 
         True if element is a rare earth metal.
@@ -268,6 +272,16 @@ class Element(Enum):
 
         Average ionic radius for element in ang. The average is taken over all
         oxidation states of the element for which data is present.
+
+    .. attribute:: average_cationic_radius
+
+        Average cationic radius for element in ang. The average is taken over all
+        positive oxidation states of the element for which data is present.
+
+    .. attribute:: average_anionic_radius
+
+        Average ionic radius for element in ang. The average is taken over all
+        negative oxidation states of the element for which data is present.
 
     .. attribute:: ionic_radii
 
@@ -486,6 +500,36 @@ class Element(Enum):
 
     @property
     @unitized("ang")
+    def average_cationic_radius(self):
+        """
+        Average cationic radius for element (with units). The average is
+        taken over all positive oxidation states of the element for which
+        data is present.
+        """
+        if "Ionic radii" in self._data:
+            radii = [v for k, v in self._data["Ionic radii"].items()
+                     if int(k) > 0]
+            if radii:
+                return sum(radii) / len(radii)
+        return 0
+
+    @property
+    @unitized("ang")
+    def average_anionic_radius(self):
+        """
+        Average anionic radius for element (with units). The average is
+        taken over all negative oxidation states of the element for which
+        data is present.
+        """
+        if "Ionic radii" in self._data:
+            radii = [v for k, v in self._data["Ionic radii"].items()
+                     if int(k) < 0]
+            if radii:
+                return sum(radii) / len(radii)
+        return 0
+
+    @property
+    @unitized("ang")
     def ionic_radii(self):
         """
         All ionic radii of the element as a dict of
@@ -568,6 +612,10 @@ class Element(Enum):
         # angular moment (L) and number of valence e- (v_e)
 
         """
+        # the number of valence of noble gas is 0
+        if self.group == 18:
+            return (np.nan, 0)
+
         L_symbols = 'SPDFGHIKLMNOQRTUVWXYZ'
         valence = []
         full_electron_config = self.full_electronic_structure
@@ -837,6 +885,13 @@ class Element(Enum):
         ns.append(89)
         ns.extend(list(range(104, 113)))
         return self.Z in ns
+
+    @property
+    def is_post_transition_metal(self):
+        """
+        True if element is a post-transition or poor metal.
+        """
+        return self.symbol in ("Al", "Ga", "In", "Tl", "Sn", "Pb", "Bi")
 
     @property
     def is_rare_earth_metal(self):
