@@ -369,4 +369,4 @@ class Eels(MSONable):
         """
         d = MSONable.as_dict(self)
         d["data"] = self.data.tolist()
-        return d
+        return jsanitize(d, strict=True)
