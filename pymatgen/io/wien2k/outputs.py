@@ -362,12 +362,8 @@ class Eels(MSONable):
         data = np.loadtxt(spectrum)
         return Eels(data, spectrum)
 
+    @classmethod
     def from_dict(cls, d):
-        """
-        Rebuilds object from dict.
-        :param d:
-        :return:
-        """
         return Eels(np.array(d["data"]), d["spectrum"])
 
 
