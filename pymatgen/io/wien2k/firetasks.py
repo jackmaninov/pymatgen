@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from fireworks.core.firework import FiretaskBase, FWAction
-import importlib
+import pymatgen.io.wien2k.outputs
 
 __author__ = 'Eamon McDermott'
 __copyright__ = 'Copyright 2019'
@@ -30,7 +30,5 @@ class ArchiveWIEN2kOutputTask(FiretaskBase):
     optional_params = ["format"]
 
     def run_task(self, fw_spec):
-        formatModule = importlib.import_module(self.get("format"))
-        formatClass = getattr(formatModule, self.get("format"))
-        toSave = formatModule.from_file(self.get("output_file"))
+        toSave = eval(self.get("format")).from_file(self.get("output_file"))
         return FWAction(stored_data=toSave.as_dict())
