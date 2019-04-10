@@ -22,7 +22,7 @@ class ArchiveWIEN2kOutputTask(FiretaskBase):
         format (str): Optional. one of "zip", "tar", "bztar" or "gztar". Defaults to gztar.
     """
 
-    _fw_name = 'ArchiveDirTask'
+    _fw_name = 'ArchiveWIEN2kOutputTask'
     required_params = ["output_file"]
     optional_params = ["format"]
 
