@@ -367,6 +367,7 @@ class Eels(MSONable):
         Returns dict representation of Eels object
         :return: dict representation
         """
-        d = MSONable.as_dict(self)
+        d = {"@module": self.__class__.__module__,
+             "@class": self.__class__.__name__}
         d["data"] = self.data.tolist()
         return jsanitize(d, strict=True)
