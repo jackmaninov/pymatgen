@@ -11,3 +11,4 @@ is based on the VASP module
 
 from .inputs import *
 from .outputs import *
+from .firetasks import *
