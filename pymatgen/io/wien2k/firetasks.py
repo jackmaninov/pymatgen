@@ -31,5 +31,6 @@ class ArchiveWIEN2kOutputTask(FiretaskBase):
 
     def run_task(self, fw_spec):
         formatModule = importlib.import_module(self.get("format"))
+        formatClass = getattr(formatModule, self.get("format"))
         toSave = formatModule.from_file(self.get("output_file"))
         return FWAction(stored_data=toSave.as_dict())
