@@ -114,9 +114,8 @@ class EelsAngleSweepTask(FiretaskBase):
 
         tasklist = Firework([])
 
-        baseInnes = Innes.from_dict(self.get("Innes"))
-        if not baseInnes.config_dict:
-            baseInnes.config_dict = {"ORIENTATION SENSITIVE": [0,0,0]}
+        baseInnes = self.get("Innes")
+
         for alpha in self.frange(0, 90, step):
             for beta in self.frange(0, 90, step):
                 for gamma in self.frange(0, 90, step):
