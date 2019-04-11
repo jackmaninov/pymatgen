@@ -113,7 +113,8 @@ class EelsAngleSweepTask(FiretaskBase):
         if not step:
             step = 15.0
 
-        tasklist = Workflow(Firework([]))
+        tasklist=[]
+
 
         baseInnes = self.get("Innes")
 
@@ -122,7 +123,7 @@ class EelsAngleSweepTask(FiretaskBase):
                 for gamma in self.frange(0, 90, step):
                     caseInnes=Innes.from_dict(baseInnes.as_dict())
                     caseInnes.config_dict["ORIENTATION SENSITIVE"] = [alpha, beta, gamma]
-                    tasklist.tasks.append(Firework(TelnesRunTask({"case_name": self.get("case_name"),
+                    tasklist.append(Firework(TelnesRunTask({"case_name": self.get("case_name"),
                                                          "origin": self.get("origin"),
                                                          "Innes": caseInnes.as_dict()})))
-        return FWAction(detours=tasklist)
+        return FWAction(additions=tasklist)
