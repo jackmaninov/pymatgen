@@ -972,7 +972,7 @@ class TelnesTags(dict):
 class Innes(MSONable):
     pass
 
-    def __init__(self, config_dict=None, comment="EELS spectrum", absorbing_atom=1, edge='K',
+    def __init__(self, config_dict={}, comment="EELS spectrum", absorbing_atom=1, edge='K',
                  e_onset=535.0, e_beam=200.0, e_start=0.0, e_final=35.0, e_step=0.05,
                  collection_sa=5.0, convergence_sa=1.87, qmesh_nr=5, qmesh_nt=2,
                  broadening=0.30, edge_n=None, edge_l=None):
