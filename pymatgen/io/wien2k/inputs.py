@@ -1046,7 +1046,8 @@ class Innes(MSONable):
                   ' '.join(['{:.2f}'.format(self.collection_sa), '{:.2f}'.format(self.convergence_sa)]),
                   ' '.join([str(self.qmesh_nr), str(self.qmesh_nt)]),
                   '{:.2f}'.format(self.broadening)]
-        output.extend(["%s\n%s" % (k, TelnesTags._stringify_val(v))
+        if self.config_dict():
+            output.extend(["%s\n%s" % (k, TelnesTags._stringify_val(v))
                        for k, v in six.iteritems(self.config_dict)])
 
         output.append("END")
