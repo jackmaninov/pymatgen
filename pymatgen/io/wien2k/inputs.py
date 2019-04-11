@@ -1002,6 +1002,8 @@ class Innes(MSONable):
         self.e_beam = e_beam
         self.comment = comment
         self.config_dict = deepcopy(config_dict)
+        if not self.config_dict:
+            self.config_dict = {}
         self.e_start = e_start
         self.e_final = e_final
         self.e_step = e_step
