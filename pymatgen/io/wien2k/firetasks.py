@@ -109,9 +109,9 @@ class EelsAngleSweepTask(FiretaskBase):
             i += step
 
     def run_task(self, fw_spec):
-        step = int(self.get("step"))
+        step = float(self.get("step"))
         if not step:
-            step = 15
+            step = 15.0
 
         tasklist = Firework([])
 
@@ -120,8 +120,9 @@ class EelsAngleSweepTask(FiretaskBase):
         for alpha in self.frange(0, 90, step):
             for beta in self.frange(0, 90, step):
                 for gamma in self.frange(0, 90, step):
-                    baseInnes.config_dict["ORIENTATION SENSITIVE"] = [alpha, beta, gamma]
+                    caseInnes=Innes.from_dict(baseInnes.as_dict())
+                    caseInnes.config_dict["ORIENTATION SENSITIVE"] = [alpha, beta, gamma]
                     tasklist.tasks.append(TelnesRunTask({"case_name": self.get("case_name"),
                                                          "origin": self.get("origin"),
-                                                         "Innes": baseInnes.as_dict()}))
+                                                         "Innes": caseInnes.as_dict()}))
         return FWAction(additions=tasklist)
