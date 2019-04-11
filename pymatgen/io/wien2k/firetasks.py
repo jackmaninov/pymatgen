@@ -110,7 +110,7 @@ class EelsAngleSweepTask(FiretaskBase):
         step = int(self.get("step"))
         if not step: step = 15
 
-        tasklist = Firework()
+        tasklist = Firework([])
 
         baseInnes = Innes.from_dict(self.get("Innes"))
         for alpha in self.frange(0, 90 , step):
