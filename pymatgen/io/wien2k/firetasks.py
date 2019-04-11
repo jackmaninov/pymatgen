@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from fireworks.core.firework import FiretaskBase, FWAction
 from fireworks import Firework, Workflow, ScriptTask, FileTransferTask
+from fireworks.user_objects.dupefinders.dupefinder_exact import DupeFinderExact
 import pymatgen.io.wien2k.outputs
 from pymatgen.io.wien2k.inputs import Innes
 
@@ -46,7 +47,7 @@ class DeployInnesInputTask(FiretaskBase):
 
     _fw_name = 'DeployInnesInputTask'
     required_params = ["output_file"]
-    optional_params = ["Innes"]   #TODO do I pass a dict or just what I want to change?
+    optional_params = ["Innes"]
 
     def run_task(self, fw_spec):
         a = self.get("Innes")
@@ -83,8 +84,9 @@ class TelnesRunTask(FiretaskBase):
         runTask = ScriptTask.from_str('cd '+ case +' && x telnes3 && x broadening >> STDOUT')
         archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.broadspec',
                                                 'format': 'pymatgen.io.wien2k.outputs.Eels'})
-        cleanTask = ScriptTask.from_str('yes|rm -rf '+case)
-        return FWAction(detours=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask, cleanTask]))
+        cleanTask = ScriptTask.from_str('yes|rm -rf ' + case)
+        return FWAction(detours=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask, cleanTask],
+                                         spec={"_dupefinder": DupeFinderExact()}))
 
 class EelsAngleSweepTask(FiretaskBase):
     """
@@ -125,5 +127,6 @@ class EelsAngleSweepTask(FiretaskBase):
                     caseInnes.config_dict["ORIENTATION SENSITIVE"] = [alpha, beta, gamma]
                     tasklist.append(Firework(TelnesRunTask({"case_name": self.get("case_name"),
                                                          "origin": self.get("origin"),
-                                                         "Innes": caseInnes.as_dict()})))
+                                                         "Innes": caseInnes.as_dict()}),
+                                             spec={"_dupefinder": DupeFinderExact()}))
         return FWAction(additions=tasklist)
