@@ -113,7 +113,7 @@ class EelsAngleSweepTask(FiretaskBase):
         if not step:
             step = 15.0
 
-        tasklist = Workflow([])
+        tasklist = Workflow(Firework([]))
 
         baseInnes = self.get("Innes")
 
