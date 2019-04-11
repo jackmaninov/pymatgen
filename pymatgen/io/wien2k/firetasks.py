@@ -96,7 +96,7 @@ class EelsAngleSweepTask(FiretaskBase):
         step (int): step size
     """
 
-    _fw_name = 'EelsAngleSweep'
+    _fw_name = 'EelsAngleSweepTask'
     required_params = ["case_name", "origin", "Innes"]
     optional_params = ["step", "phase", "component", "method", "optimized"]
 
