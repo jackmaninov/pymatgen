@@ -84,7 +84,7 @@ class TelnesRunTask(FiretaskBase):
         archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.broadspec',
                                                 'format': 'pymatgen.io.wien2k.outputs.Eels'})
         cleanTask = ScriptTask.from_str('yes|rm -rf '+case)
-        return FWAction(additions=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask]))  #, cleanTask]))
+        return FWAction(detours=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask]))  #, cleanTask]))
 
 class EelsAngleSweepTask(FiretaskBase):
     """
