@@ -117,6 +117,7 @@ class EelsAngleSweepTask(FiretaskBase):
             for beta in self.frange(0, 90, step):
                 for gamma in self.frange(0, 90, step):
                     baseInnes.config_dict["ORIENTATION SENSITIVE"] = [alpha, beta, gamma]
-                    tasklist.tasks.append(TelnesRunTask({"case_name": self.get("case_name"), "origin": self.get("origin")
+                    tasklist.tasks.append(TelnesRunTask({"case_name": self.get("case_name"),
+                                                         "origin": self.get("origin"),
                                                          "Innes": baseInnes.as_dict()}))
         return FWAction(additions=tasklist)
