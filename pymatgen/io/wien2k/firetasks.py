@@ -84,7 +84,7 @@ class TelnesRunTask(FiretaskBase):
         archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.broadspec',
                                                 'format': 'pymatgen.io.wien2k.outputs.Eels'})
         cleanTask = ScriptTask.from_str('yes|rm -rf '+case)
-        return FWAction(detours=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask]))  #, cleanTask]))
+        return FWAction(additions=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask]))  #, cleanTask]))
 
 class EelsAngleSweepTask(FiretaskBase):
     """
@@ -113,7 +113,7 @@ class EelsAngleSweepTask(FiretaskBase):
         if not step:
             step = 15.0
 
-        tasklist = Firework([])
+        tasklist = Workflow([])
 
         baseInnes = self.get("Innes")
 
@@ -122,8 +122,7 @@ class EelsAngleSweepTask(FiretaskBase):
                 for gamma in self.frange(0, 90, step):
                     caseInnes=Innes.from_dict(baseInnes.as_dict())
                     caseInnes.config_dict["ORIENTATION SENSITIVE"] = [alpha, beta, gamma]
-                    tasklist.tasks.append(TelnesRunTask({"case_name": self.get("case_name"),
+                    tasklist.tasks.append(Firework(TelnesRunTask({"case_name": self.get("case_name"),
                                                          "origin": self.get("origin"),
-                                                         "Innes": caseInnes.as_dict()}))
-        print(tasklist.tasks)
+                                                         "Innes": caseInnes.as_dict()})))
         return FWAction(detours=tasklist)
