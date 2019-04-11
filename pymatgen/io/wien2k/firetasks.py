@@ -35,7 +35,7 @@ class ArchiveWIEN2kOutputTask(FiretaskBase):
         toSave = eval(self.get("format")).from_file(self.get("output_file"))
         return FWAction(stored_data=toSave.as_dict())
 
-class DeployInessInputTask(FiretaskBase):
+class DeployInnesInputTask(FiretaskBase):
     """
     Write a WIEN2k Innes input file from spec
 
@@ -44,12 +44,12 @@ class DeployInessInputTask(FiretaskBase):
         Innes (dict): Innes to create
     """
 
-    _fw_name = 'DeployInessInputTask'
+    _fw_name = 'DeployInnesInputTask'
     required_params = ["output_file"]
     optional_params = ["Innes"]   #TODO do I pass a dict or just what I want to change?
 
     def run_task(self, fw_spec):
-        a = Innes.from_dict(self.get("Innes"))
+        a = self.get("Innes")
         a.write_file(self.get("output_file"))
 
 class TelnesRunTask(FiretaskBase):
@@ -79,7 +79,7 @@ class TelnesRunTask(FiretaskBase):
         deployTask = FileTransferTask(
             {'files': self.TelnesList(case, self.get("origin")), 'dest': case,
              'mode': 'copy'})  # , 'ignore_errors':'True'
-        deployTask2 = DeployInessInputTask({'output_file': case + '/' + case + ".innes", 'Innes': self.get("Innes")})
+        deployTask2 = DeployInnesInputTask({'output_file': case + '/' + case + ".innes", 'Innes': self.get("Innes")})
         runTask = ScriptTask.from_str('cd '+ case +' && x telnes3 && x broadening >> STDOUT')
         archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.broadspec',
                                                 'format': 'pymatgen.io.wien2k.outputs.Eels'})
