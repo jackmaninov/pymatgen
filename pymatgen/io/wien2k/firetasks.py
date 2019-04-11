@@ -66,6 +66,7 @@ class TelnesRunTask(FiretaskBase):
     required_params = ["case_name", "origin"]
     optional_params = ["Innes"]
 
+    @staticmethod
     def TelnesList(case='case', path=''):
         TelnesExtensions = ['kgen', 'innes', 'inc', 'inb', 'corewavef', 'final', 'vsp', 'vtotal',
                             'struct', 'qtl', 'rotij', 'ortho', 'ctr', 'sdlm', 'matrix', 'cdos', 'dos',
@@ -76,7 +77,7 @@ class TelnesRunTask(FiretaskBase):
         case = self.get("case_name")
         mkdirTask = ScriptTask.from_str('mkdir ' + case)
         deployTask = FileTransferTask(
-            {'files': TelnesList(case, self.get("origin")), 'dest': case,
+            {'files': self.TelnesList(case, self.get("origin")), 'dest': case,
              'mode': 'copy'})  # , 'ignore_errors':'True'
         deployTask2 = DeployInessInputTask({'output_file': case + '/' + case + ".innes", 'Innes': self.get("Innes")})
         runTask = ScriptTask.from_str('cd '+ case +' && x telnes3 && x broadening >> STDOUT')
