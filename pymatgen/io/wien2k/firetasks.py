@@ -76,8 +76,7 @@ class TelnesRunTask(FiretaskBase):
         case = self.get("case_name")
         mkdirTask = ScriptTask.from_str('mkdir ' + case)
         deployTask = FileTransferTask(
-            {'files': self.TelnesList(case, self.get("origin")), 'dest': case,
-             'mode': 'copy'})  # , 'ignore_errors':'True'
+            {'files': self.TelnesList(case, self.get("origin")), 'dest': case, 'mode': 'copy'})
         deployTask2 = DeployInnesInputTask({'output_file': case + '/' + case + ".innes", 'Innes': self.get("Innes")})
         runTask = ScriptTask.from_str('cd '+ case +' && x telnes3 && x broadening >> STDOUT')
         archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.broadspec',
