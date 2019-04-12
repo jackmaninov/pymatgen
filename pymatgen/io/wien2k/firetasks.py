@@ -34,7 +34,7 @@ class ArchiveWIEN2kOutputTask(FiretaskBase):
 
     def run_task(self, fw_spec):
         toSave = eval(self.get("format")).from_file(self.get("output_file"))
-        return FWAction(stored_data=toSave.as_dict(), update_spec={"data_type", self.get("format")})
+        return FWAction(stored_data=toSave.as_dict())
 
 class DeployInnesInputTask(FiretaskBase):
     """
