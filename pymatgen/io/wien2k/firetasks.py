@@ -134,15 +134,15 @@ class EelsAngleSweepTask(FiretaskBase):
                     caseInnes=Innes.from_dict(baseInnes.as_dict())
                     caseInnes.config_dict["ORIENTATION SENSITIVE"] = [alpha, beta, gamma]
                     tasklist.append(Firework(TelnesRunTask({"case_name": self.get("case_name"),
-                                                         "origin": self.get("origin"),
-                                                         "Innes": caseInnes.as_dict()}),
-                                             spec={"_dupefinder": DupeFinderExact(),
-                                                   "case_name": self.get("case_name"),
-                                                   "alpha": alpha,
-                                                   "beta": beta,
-                                                   "gamma": gamma,
-                                                   "phase": self.get("phase"),
-                                                   "component": self.get("component"),
-                                                   "method": self.get("method"),
-                                                   "optimized": self.get("optimized")}))
+                                                            "origin": self.get("origin"),
+                                                            "Innes": caseInnes.as_dict(),
+                                                            "alpha": alpha,
+                                                            "beta": beta,
+                                                            "gamma": gamma,
+                                                            "phase": self.get("phase"),
+                                                            "component": self.get("component"),
+                                                            "method": self.get("method"),
+                                                            "optimized": self.get("optimized")
+                                                            }),
+                                             spec={"_dupefinder": DupeFinderExact()}))
         return FWAction(additions=tasklist)
