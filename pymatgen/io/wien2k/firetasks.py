@@ -130,6 +130,7 @@ class EelsAngleSweepTask(FiretaskBase):
                                                          "Innes": caseInnes.as_dict()}),
                                              spec={"_dupefinder": DupeFinderExact(),
                                                    "case_name": self.get("case_name"),
+                                                   "data_type": "Telnes",
                                                    "alpha": alpha,
                                                    "beta": beta,
                                                    "gamma": gamma,
