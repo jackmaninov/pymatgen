@@ -86,7 +86,16 @@ class TelnesRunTask(FiretaskBase):
                                                 'format': 'pymatgen.io.wien2k.outputs.Eels'})
         cleanTask = ScriptTask.from_str('yes|rm -rf ' + case)
         return FWAction(detours=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask, cleanTask],
-                                         spec={"_dupefinder": DupeFinderExact()}))
+                                         spec={"_dupefinder": DupeFinderExact(),
+                                               "case_name": self.get("case_name"),
+                                               "data_type": "Telnes",
+                                               "alpha": alpha,
+                                               "beta": beta,
+                                               "gamma": gamma,
+                                               "phase": self.get("phase"),
+                                               "component": self.get("component"),
+                                               "method": self.get("method"),
+                                               "optimized": self.get("optimized")}))
 
 class EelsAngleSweepTask(FiretaskBase):
     """
