@@ -34,7 +34,7 @@ class ArchiveWIEN2kOutputTask(FiretaskBase):
 
     def run_task(self, fw_spec):
         toSave = eval(self.get("format")).from_file(self.get("output_file"))
-        return FWAction(stored_data=toSave.as_dict())
+        return FWAction(stored_data=toSave.as_dict(), update_spec={"data_type", self.get("format")})
 
 class DeployInnesInputTask(FiretaskBase):
     """
@@ -65,7 +65,7 @@ class TelnesRunTask(FiretaskBase):
 
     _fw_name = 'TelnesRunTask'
     required_params = ["case_name", "origin"]
-    optional_params = ["Innes"]
+    optional_params = ["Innes", "alpha", "beta", "gamma", "phase", "component", "method", "optimized"]
 
     @staticmethod
     def TelnesList(case='case', path=''):
@@ -88,7 +88,6 @@ class TelnesRunTask(FiretaskBase):
         return FWAction(additions=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask, cleanTask],
                                          spec={"_dupefinder": DupeFinderExact(),
                                                "case_name": self.get("case_name"),
-                                               "data_type": "Telnes",
                                                "alpha": self.get("alpha"),
                                                "beta": self.get("beta"),
                                                "gamma": self.get("gamma"),
