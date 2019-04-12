@@ -34,7 +34,7 @@ class ArchiveWIEN2kOutputTask(FiretaskBase):
 
     def run_task(self, fw_spec):
         toSave = eval(self.get("format")).from_file(self.get("output_file"))
-        return FWAction(stored_data=toSave.as_dict())
+        return FWAction(stored_data=toSave.as_dict(), update_spec=)
 
 class DeployInnesInputTask(FiretaskBase):
     """
@@ -128,5 +128,13 @@ class EelsAngleSweepTask(FiretaskBase):
                     tasklist.append(Firework(TelnesRunTask({"case_name": self.get("case_name"),
                                                          "origin": self.get("origin"),
                                                          "Innes": caseInnes.as_dict()}),
-                                             spec={"_dupefinder": DupeFinderExact()}))
+                                             spec={"_dupefinder": DupeFinderExact(),
+                                                   "case_name": self.get("case_name"),
+                                                   "alpha": alpha,
+                                                   "beta": beta,
+                                                   "gamma": gamma,
+                                                   "phase": self.get("phase"),
+                                                   "component": self.get("component"),
+                                                   "method": self.get("method"),
+                                                   "optimized": self.get("optimized")}))
         return FWAction(additions=tasklist)
