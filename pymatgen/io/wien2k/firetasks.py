@@ -69,9 +69,7 @@ class TelnesRunTask(FiretaskBase):
 
     @staticmethod
     def TelnesList(case='case', path=''):
-        TelnesExtensions = ['kgen', 'innes', 'inc', 'inb', 'corewavef', 'final', 'vsp', 'vtotal',
-                            'struct', 'qtl', 'rotij', 'ortho', 'ctr', 'sdlm', 'matrix', 'cdos', 'dos',
-                            'xdos', 'sp2', 'angular', 'eelstable']
+        TelnesExtensions = ['kgen', 'inc', 'vsp', 'struct', 'qtl']
         return ([path + (case + '.' + ext) for ext in TelnesExtensions])
 
     def run_task(self, fw_spec):
