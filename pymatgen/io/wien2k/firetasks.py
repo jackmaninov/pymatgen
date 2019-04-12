@@ -85,7 +85,7 @@ class TelnesRunTask(FiretaskBase):
         archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.broadspec',
                                                 'format': 'pymatgen.io.wien2k.outputs.Eels'})
         cleanTask = ScriptTask.from_str('yes|rm -rf ' + case)
-        return FWAction(detours=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask, cleanTask],
+        return FWAction(additions=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask, cleanTask],
                                          spec={"_dupefinder": DupeFinderExact(),
                                                "case_name": self.get("case_name"),
                                                "data_type": "Telnes",
