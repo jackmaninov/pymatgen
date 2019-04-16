@@ -79,7 +79,7 @@ class TelnesRunTask(FiretaskBase):
             {'files': self.TelnesList(case, self.get("origin")), 'dest': case, 'mode': 'copy'})
         deployTask2 = DeployInnesInputTask({'output_file': case + '/' + case + ".innes", 'Innes': self.get("Innes")})
         runTask = ScriptTask.from_str('cd '+ case +' && x telnes3 && x broadening >> STDOUT')
-        archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.broadspec',
+        archiveTask = ArchiveWIEN2kOutputTask( {'output_file': case + '/' + case + '.elnes',
                                                 'format': 'pymatgen.io.wien2k.outputs.Eels'})
         cleanTask = ScriptTask.from_str('yes|rm -rf ' + case)
         return FWAction(additions=Firework([mkdirTask, deployTask, deployTask2, runTask, archiveTask, cleanTask],
