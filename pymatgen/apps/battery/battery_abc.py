@@ -3,13 +3,6 @@
 # Distributed under the terms of the MIT License.
 
 
-from collections.abc import Sequence
-import abc
-
-from monty.json import MSONable
-
-from scipy.constants import N_A
-
 """
 This module defines the abstract base classes for battery-related classes.
 Regardless of the kind of electrode, conversion or insertion, there are many
@@ -17,7 +10,6 @@ common definitions and properties, e.g., average voltage, capacity, etc. which
 can be defined in a general way. The Abc for battery classes implements some of
 these common definitions to allow sharing of common logic between them.
 """
-
 
 __author__ = "Anubhav Jain, Shyue Ping Ong"
 __copyright__ = "Copyright 2012, The Materials Project"
@@ -27,59 +19,45 @@ __email__ = "shyuep@gmail.com"
 __date__ = "Feb 1, 2012"
 __status__ = "Beta"
 
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Iterable
 
-class AbstractVoltagePair:
+from monty.json import MSONable
+from scipy.constants import N_A
+
+from pymatgen.entries.computed_entries import ComputedEntry
+
+
+@dataclass
+class AbstractVoltagePair(MSONable):
     """
     An Abstract Base Class for a Voltage Pair.
+
+    Attributes:
+        voltage : Voltage of voltage pair.
+        mAh: Energy in mAh.
+        mass_charge: Mass of charged pair.
+        mass_discharge: Mass of discharged pair.
+        vol_charge: Vol of charged pair.
+        vol_discharge: Vol of discharged pair.
+        frac_charge: Frac of working ion in charged pair.
+        frac_discharge: Frac of working ion in discharged pair.
+        working_ion_entry: Working ion as an entry.
     """
-    __metaclass__ = abc.ABCMeta
 
-    @property
-    @abc.abstractmethod
-    def voltage(self):
-        return self._voltage
-
-    @property
-    @abc.abstractmethod
-    def mAh(self):
-        return self._mAh
-
-    @property
-    @abc.abstractmethod
-    def mass_charge(self):
-        return self._mass_charge
-
-    @property
-    @abc.abstractmethod
-    def mass_discharge(self):
-        return self._mass_discharge
-
-    @property
-    @abc.abstractmethod
-    def vol_charge(self):
-        return self._vol_charge
-
-    @property
-    @abc.abstractmethod
-    def vol_discharge(self):
-        return self._vol_discharge
-
-    @property
-    @abc.abstractmethod
-    def frac_charge(self):
-        return self._frac_charge
-
-    @property
-    @abc.abstractmethod
-    def frac_discharge(self):
-        return self._frac_discharge
-
-    @property
-    @abc.abstractmethod
-    def working_ion_entry(self):
-        return self._working_ion_entry
+    voltage: float
+    mAh: float
+    mass_charge: float
+    mass_discharge: float
+    vol_charge: float
+    vol_discharge: float
+    frac_charge: float
+    frac_discharge: float
+    working_ion_entry: ComputedEntry
 
 
+@dataclass
 class AbstractElectrode(Sequence, MSONable):
     """
     An Abstract Base Class representing an Electrode. It is essentially a
@@ -117,33 +95,14 @@ class AbstractElectrode(Sequence, MSONable):
 
     Developers implementing a new battery (other than the two general ones
     already implemented) need to implement a VoltagePair and an Electrode.
+    Attributes:
+        voltage_pairs: Objects that represent each voltage step
+        working_ion: Representation of the working ion that only contains element type
+        working_ion_entry: Representation of the working_ion that contains the energy
     """
 
-    __metaclass__ = abc.ABCMeta
-
-    @property
-    @abc.abstractmethod
-    def voltage_pairs(self):
-        """
-        Returns all the VoltagePairs
-        """
-        return
-
-    @property
-    @abc.abstractmethod
-    def working_ion(self):
-        """
-        The working ion as an Element object
-        """
-        return
-
-    @property
-    @abc.abstractmethod
-    def working_ion_entry(self):
-        """
-        The working ion as an Entry object
-        """
-        return
+    voltage_pairs: Iterable[AbstractVoltagePair]
+    working_ion_entry: ComputedEntry
 
     def __getitem__(self, index):
         return self.voltage_pairs[index]
@@ -156,6 +115,13 @@ class AbstractElectrode(Sequence, MSONable):
 
     def __len__(self):
         return len(self.voltage_pairs)
+
+    @property
+    def working_ion(self):
+        """
+        working ion as pymatgen Element object
+        """
+        return self.working_ion_entry.composition.elements[0]
 
     @property
     def max_delta_volume(self):
@@ -193,17 +159,26 @@ class AbstractElectrode(Sequence, MSONable):
         """
         Maximum absolute difference in adjacent voltage steps
         """
-        steps = [self.voltage_pairs[i].voltage
-                 - self.voltage_pairs[i + 1].voltage
-                 for i in range(len(self.voltage_pairs) - 1)]
+        steps = [
+            self.voltage_pairs[i].voltage - self.voltage_pairs[i + 1].voltage
+            for i in range(len(self.voltage_pairs) - 1)
+        ]
         return max(steps) if len(steps) > 0 else 0
 
     @property
     def normalization_mass(self):
+        """
+        Returns: Mass used for normalization. This is the mass of the discharged
+            electrode of the last voltage pair.
+        """
         return self.voltage_pairs[-1].mass_discharge
 
     @property
     def normalization_volume(self):
+        """
+        Returns: Mass used for normalization. This is the vol of the discharged
+            electrode of the last voltage pair.
+        """
         return self.voltage_pairs[-1].vol_discharge
 
     def get_average_voltage(self, min_voltage=None, max_voltage=None):
@@ -220,16 +195,16 @@ class AbstractElectrode(Sequence, MSONable):
             Average voltage in V across the insertion path (a subset of the
             path can be chosen by the optional arguments)
         """
-        pairs_in_range = self._select_in_voltage_range(min_voltage,
-                                                       max_voltage)
+        pairs_in_range = self._select_in_voltage_range(min_voltage, max_voltage)
         if len(pairs_in_range) == 0:
             return 0
         total_cap_in_range = sum([p.mAh for p in pairs_in_range])
         total_edens_in_range = sum([p.mAh * p.voltage for p in pairs_in_range])
         return total_edens_in_range / total_cap_in_range
 
-    def get_capacity_grav(self, min_voltage=None, max_voltage=None,
-                          use_overall_normalization=True):
+    def get_capacity_grav(
+        self, min_voltage=None, max_voltage=None, use_overall_normalization=True
+    ):
         """
         Get the gravimetric capacity of the electrode.
 
@@ -247,15 +222,17 @@ class AbstractElectrode(Sequence, MSONable):
             Gravimetric capacity in mAh/g across the insertion path (a subset
             of the path can be chosen by the optional arguments).
         """
-        pairs_in_range = self._select_in_voltage_range(min_voltage,
-                                                       max_voltage)
-        normalization_mass = self.normalization_mass \
-            if use_overall_normalization or len(pairs_in_range) == 0 \
+        pairs_in_range = self._select_in_voltage_range(min_voltage, max_voltage)
+        normalization_mass = (
+            self.normalization_mass
+            if use_overall_normalization or len(pairs_in_range) == 0
             else pairs_in_range[-1].mass_discharge
+        )
         return sum([pair.mAh for pair in pairs_in_range]) / normalization_mass
 
-    def get_capacity_vol(self, min_voltage=None, max_voltage=None,
-                         use_overall_normalization=True):
+    def get_capacity_vol(
+        self, min_voltage=None, max_voltage=None, use_overall_normalization=True
+    ):
         """
         Get the volumetric capacity of the electrode.
 
@@ -273,16 +250,19 @@ class AbstractElectrode(Sequence, MSONable):
             Volumetric capacity in mAh/cc across the insertion path (a subset
             of the path can be chosen by the optional arguments)
         """
-        pairs_in_range = self._select_in_voltage_range(min_voltage,
-                                                       max_voltage)
-        normalization_vol = self.normalization_volume \
-            if use_overall_normalization or len(pairs_in_range) == 0 \
+        pairs_in_range = self._select_in_voltage_range(min_voltage, max_voltage)
+        normalization_vol = (
+            self.normalization_volume
+            if use_overall_normalization or len(pairs_in_range) == 0
             else pairs_in_range[-1].vol_discharge
-        return sum([pair.mAh for pair in pairs_in_range]) / normalization_vol \
-            * 1e24 / N_A
+        )
+        return (
+            sum([pair.mAh for pair in pairs_in_range]) / normalization_vol * 1e24 / N_A
+        )
 
-    def get_specific_energy(self, min_voltage=None, max_voltage=None,
-                            use_overall_normalization=True):
+    def get_specific_energy(
+        self, min_voltage=None, max_voltage=None, use_overall_normalization=True
+    ):
         """
         Returns the specific energy of the battery in mAh/g.
 
@@ -300,12 +280,13 @@ class AbstractElectrode(Sequence, MSONable):
             Specific energy in Wh/kg across the insertion path (a subset of
             the path can be chosen by the optional arguments)
         """
-        return self.get_capacity_grav(min_voltage, max_voltage,
-                                      use_overall_normalization) \
-            * self.get_average_voltage(min_voltage, max_voltage)
+        return self.get_capacity_grav(
+            min_voltage, max_voltage, use_overall_normalization
+        ) * self.get_average_voltage(min_voltage, max_voltage)
 
-    def get_energy_density(self, min_voltage=None, max_voltage=None,
-                           use_overall_normalization=True):
+    def get_energy_density(
+        self, min_voltage=None, max_voltage=None, use_overall_normalization=True
+    ):
         """
         Args:
             min_voltage (float): The minimum allowable voltage for a given
@@ -321,9 +302,9 @@ class AbstractElectrode(Sequence, MSONable):
             Energy density in Wh/L across the insertion path (a subset of the
             path can be chosen by the optional arguments).
         """
-        return self.get_capacity_vol(min_voltage, max_voltage,
-                                     use_overall_normalization) \
-            * self.get_average_voltage(min_voltage, max_voltage)
+        return self.get_capacity_vol(
+            min_voltage, max_voltage, use_overall_normalization
+        ) * self.get_average_voltage(min_voltage, max_voltage)
 
     def _select_in_voltage_range(self, min_voltage=None, max_voltage=None):
         """
@@ -338,9 +319,10 @@ class AbstractElectrode(Sequence, MSONable):
         Returns:
             A list of VoltagePair objects
         """
-        min_voltage = min_voltage if min_voltage is not None \
-            else self.min_voltage
-        max_voltage = max_voltage if max_voltage is not None \
-            else self.max_voltage
-        return list(filter(lambda p: min_voltage <= p.voltage <= max_voltage,
-                           self.voltage_pairs))
+        min_voltage = min_voltage if min_voltage is not None else self.min_voltage
+        max_voltage = max_voltage if max_voltage is not None else self.max_voltage
+        return list(
+            filter(
+                lambda p: min_voltage <= p.voltage <= max_voltage, self.voltage_pairs
+            )
+        )
